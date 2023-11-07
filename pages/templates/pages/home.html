@@ -1,11 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MESHACK BWIRE - Portfolio</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
+{% extends "base.html" %}
+
+{% block page_content %}
+<html lang="en">
 <body>
     <header>
         <nav>
@@ -19,7 +23,7 @@
     </header>
     <section id="intro">
         <h1>Welcome to My Portfolio</h1>
-        <p>Hello, I'm Meshack Bwire, a Software Engineer specializing in Point of Sale (POS) systems. I contribute to the design and development of payment solutions applications enabling seamless transactions and enhancing customer experiences. I actively research and recommend innovative solutions to enhance Tracom Services Limited's software offerings and competitive edge. Let's explore my work and connect!</p>
+        <p>Hello, I'm Meshack Bwire, a Software Engineer specializing in Point of Sale (POS) systems. I contribute to the design and development of payment solutions applications for Co-operative Bank of Kenya, Quantum (Ethiopia), and Commercial Rural Development Bank, enabling seamless transactions and enhancing customer experiences. I actively research and recommend innovative solutions to enhance Tracom Services Limited's software offerings and competitive edge. Let's explore my work and connect!</p>
     </section>
     <section id="contact">
         <h2>Contact Me</h2>
@@ -32,3 +36,4 @@
     </section>
 </body>
 </html>
+{% endblock page_content %}

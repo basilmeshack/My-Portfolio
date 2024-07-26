@@ -1,2 +1,19 @@
-## Introduction
-Welcome to "My Portfolio" – a personal project: my digital presence, a powerful tool to tell my proffesional story, that also serves as a foundation to build my online identity.
+# My Portfolio
+This project was built using these technologies.
+
+- React.js
+- Node.js
+- Express.js
+- CSS3
+- VsCode
+- Vercel
+
+## Features
+
+**📖 Multi-Page Layout**
+
+**🎨 Styled with React-Bootstrap and Css with easy to customize colors**
+
+**📱 Fully Responsive**
+
+Give a ⭐ if you like this website!

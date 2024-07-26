@@ -8,7 +8,7 @@ function AboutCard() {
       <Card.Body>
         <blockquote className="blockquote mb-0">
           <p style={{ textAlign: "justify" }}>
-            Hi Everyone, I am <span className="purple">MESHACK BWIRE </span>
+            My name is <span className="purple">Meshack Bwire </span>
             from <span className="purple"> Nairobi, Kenya</span>
             <br />
             Throughout my career, I have consistently demonstrated expertise and innovation in software engineering and data management. Currently, I am employed as a Software Engineer at <a href="https://www.linkedin.com/company/tracom-services/mycompany/" className="link-style" target="_blank" rel="noopener noreferrer">Tracom Services Limited</a>, specializing in Android development and working with technologies such as C#, JavaScript, and .NET for desk POS systems. My other roles involve integrating client Web APIs, ensuring PCI compliance, creation of Bitbucket pipelines and deployment of applications. 

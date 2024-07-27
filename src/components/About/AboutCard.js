@@ -7,7 +7,7 @@ function AboutCard() {
     <Card className="quote-card-view">
       <Card.Body>
         <blockquote className="blockquote mb-0">
-          <p style={{ textAlign: "justify" }}>
+          <p style={{ textAlign: "justify", fontSize: "18px" }}>
             My name is <span className="purple">Meshack Bwire </span>
             from <span className="purple"> Nairobi, Kenya</span>
             <br />

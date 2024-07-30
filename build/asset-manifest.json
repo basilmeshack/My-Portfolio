@@ -1,0 +1,23 @@
+{
+  "files": {
+    "main.css": "/static/css/main.a5cb7256.css",
+    "main.js": "/static/js/main.354872ab.js",
+    "static/js/453.ace21015.chunk.js": "/static/js/453.ace21015.chunk.js",
+    "static/media/kanda_fashion.png": "/static/media/kanda_fashion.747aa40d4209198eb8ae.png",
+    "static/media/Meshack_Bwire_CV.pdf": "/static/media/Meshack_Bwire_CV.b242de06dabb299e536d.pdf",
+    "static/media/home-main.svg": "/static/media/home-main.541f8179af8209ce03ccf2178fe62dbf.svg",
+    "static/media/about.png": "/static/media/about.aee0f771fbfc1e7b8fa8.png",
+    "static/media/logo.png": "/static/media/logo.046eb1ad165d058f47da.png",
+    "static/media/home-bg.jpg": "/static/media/home-bg.dc52d5d40a40b13154b0.jpg",
+    "static/media/avatar.svg": "/static/media/avatar.5852f40fbb38aa284829fa3fb7722225.svg",
+    "static/media/pre.svg": "/static/media/pre.d4812f51c8c80976eaab.svg",
+    "index.html": "/index.html",
+    "main.a5cb7256.css.map": "/static/css/main.a5cb7256.css.map",
+    "main.354872ab.js.map": "/static/js/main.354872ab.js.map",
+    "453.ace21015.chunk.js.map": "/static/js/453.ace21015.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.a5cb7256.css",
+    "static/js/main.354872ab.js"
+  ]
+}

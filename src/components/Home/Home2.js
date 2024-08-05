@@ -5,7 +5,7 @@ import Tilt from "react-parallax-tilt";
 import {
   AiFillGithub,
   // AiOutlineTwitter,
-  // AiFillInstagram,
+  AiFillMail,
 } from "react-icons/ai";
 import { FaLinkedinIn } from "react-icons/fa";
 
@@ -67,7 +67,7 @@ function Home2() {
           <Col md={12} className="home-about-social">
             <h1>FIND ME ON</h1>
             <p>
-              Feel free to <span className="purple">connect </span>with me
+              Feel free to connect with me!
             </p>
             <ul className="home-about-social-links">
               <li className="social-icons">
@@ -100,16 +100,17 @@ function Home2() {
                   <FaLinkedinIn />
                 </a>
               </li>
-              {/* <li className="social-icons">
-                <a
-                  href="https://www.instagram.com/b__meshack/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="icon-colour home-social-icons"
-                >
-                  <AiFillInstagram />
-                </a>
-              </li> */}
+              <li className="social-icons">
+              <a
+                href="mailto:bmwandera14@gmail.com"
+                style={{ color: "white" }}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="icon-colour  home-social-icons"
+              >
+                <AiFillMail />
+              </a>
+              </li>
             </ul>
           </Col>
         </Row>

@@ -1,0 +1,211 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 15, 23, 42;
+  --background-end-rgb: 30, 41, 59;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(to bottom, rgb(var(--background-start-rgb)), rgb(var(--background-end-rgb)));
+  min-height: 100vh;
+}
+
+/* Animation for typing cursor */
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #8b5cf6;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #7c3aed;
+}
+
+/* GitHub calendar customization */
+.calendar {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.calendar .contrib-column {
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 10px;
+}
+
+.calendar .contrib-column-first {
+  border-left: 0;
+}
+
+.calendar .table-column {
+  padding: 10px;
+  text-align: center;
+  font-size: 12px;
+}
+
+.calendar .contrib-number {
+  color: #c4b5fd;
+  font-weight: 600;
+}
+
+.calendar .contrib-footer {
+  font-size: 11px;
+  padding: 0 10px 12px;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+  height: 26px;
+}
+
+.calendar .contrib-legend {
+  text-align: right;
+  padding: 0 10px;
+}
+
+.calendar .contrib-legend .legend {
+  display: inline-block;
+  list-style: none;
+  margin: 0 5px;
+  position: relative;
+  bottom: -1px;
+  padding: 0;
+}
+
+.calendar .contrib-legend .legend li {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.calendar .text-small {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.calendar-graph text.wday,
+.calendar-graph text.month {
+  font-size: 10px;
+  fill: #aaa;
+}
+
+.contrib-legend .legend li {
+  background-color: #4c1d95;
+}
+
+.contrib-legend .legend li:nth-child(2) {
+  background-color: #5b21b6;
+}
+
+.contrib-legend .legend li:nth-child(3) {
+  background-color: #7c3aed;
+}
+
+.contrib-legend .legend li:nth-child(4) {
+  background-color: #8b5cf6;
+}
+
+.contrib-legend .legend li:nth-child(5) {
+  background-color: #a78bfa;
+}
+
+.calendar-graph rect.day {
+  shape-rendering: geometricprecision;
+  outline: 1px solid rgba(27, 31, 35, 0.06);
+  outline-offset: -1px;
+  rx: 2;
+  ry: 2;
+}
+
+.calendar-graph rect.day[data-level="0"] {
+  fill: #1e293b;
+}
+
+.calendar-graph rect.day[data-level="1"] {
+  fill: #4c1d95;
+}
+
+.calendar-graph rect.day[data-level="2"] {
+  fill: #5b21b6;
+}
+
+.calendar-graph rect.day[data-level="3"] {
+  fill: #7c3aed;
+}
+
+.calendar-graph rect.day[data-level="4"] {
+  fill: #8b5cf6;
+}
+
+/* Print styles for resume */
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .print\:text-black {
+    color: black !important;
+  }
+
+  .print\:text-gray-700 {
+    color: #374151 !important;
+  }
+
+  .print\:text-gray-600 {
+    color: #4b5563 !important;
+  }
+
+  .print\:text-purple-800 {
+    color: #5b21b6 !important;
+  }
+
+  .print\:bg-white {
+    background-color: white !important;
+  }
+
+  .print\:shadow-none {
+    box-shadow: none !important;
+  }
+
+  .print\:p-0 {
+    padding: 0 !important;
+  }
+
+  .print\:border-gray-300 {
+    border-color: #d1d5db !important;
+  }
+}

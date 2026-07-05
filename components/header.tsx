@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Menu, X } from "lucide-react"
 
 const navItems = [
@@ -16,6 +16,18 @@ const navItems = [
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+
+  const prefetchTargets = useMemo(() => [...navItems.map((item) => item.href), "/resume"], [])
+
+  useEffect(() => {
+    // Warm key routes so first navigation feels instant on slower devices/connections.
+    prefetchTargets.forEach((href) => router.prefetch(href))
+  }, [prefetchTargets, router])
+
+  const warmRoute = (href: string) => {
+    router.prefetch(href)
+  }
 
   return (
     <header className="bg-gray-900/80 backdrop-blur-md sticky top-0 z-50">
@@ -31,18 +43,24 @@ export default function Header() {
               <Link
                 key={item.name}
                 href={item.href}
+                prefetch
                 className={`text-base font-medium transition-colors hover:text-purple-400 ${
                   pathname === item.href ? "text-purple-400" : "text-gray-300"
                 }`}
+                onMouseEnter={() => warmRoute(item.href)}
+                onFocus={() => warmRoute(item.href)}
               >
                 {item.name}
               </Link>
             ))}
             <Link
               href="/resume"
+              prefetch
               className={`text-base font-medium transition-colors hover:text-purple-400 ${
                 pathname === "/resume" ? "text-purple-400" : "text-gray-300"
               }`}
+              onMouseEnter={() => warmRoute("/resume")}
+              onFocus={() => warmRoute("/resume")}
             >
               Resume
             </Link>
@@ -62,10 +80,12 @@ export default function Header() {
                 <li key={item.name}>
                   <Link
                     href={item.href}
+                    prefetch
                     className={`block text-base font-medium transition-colors hover:text-purple-400 ${
                       pathname === item.href ? "text-purple-400" : "text-gray-300"
                     }`}
                     onClick={() => setIsOpen(false)}
+                    onTouchStart={() => warmRoute(item.href)}
                   >
                     {item.name}
                   </Link>
@@ -74,10 +94,12 @@ export default function Header() {
               <li>
                 <Link
                   href="/resume"
+                  prefetch
                   className={`block text-base font-medium transition-colors hover:text-purple-400 ${
                     pathname === "/resume" ? "text-purple-400" : "text-gray-300"
                   }`}
                   onClick={() => setIsOpen(false)}
+                  onTouchStart={() => warmRoute("/resume")}
                 >
                   Resume
                 </Link>

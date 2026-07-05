@@ -1,7 +1,20 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import { pb, type Profile } from "@/lib/pocketbase"
+
+export interface Profile {
+  id: string
+  created: string
+  updated: string
+  full_name: string
+  location: string
+  phone: string
+  email: string
+  linkedin_url: string
+  summary: string
+  image?: string
+  tags?: string[]
+}
 
 interface ProfileContextType {
   profile: Profile | null
@@ -27,15 +40,14 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       try {
         setIsLoading(true)
 
-        // Use a unique filter to prevent auto-cancellation
-        const timestamp = new Date().getTime()
-        const records = await pb.collection("profile").getFullList({
-          sort: "-created",
-          requestKey: `profile-${timestamp}`, // Add a unique request key
-        })
+        const response = await fetch("/api/profile", { cache: "force-cache" })
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`)
+        }
 
-        if (isMounted && records.length > 0) {
-          setProfile(records[0] as Profile)
+        const data = await response.json()
+        if (isMounted && data?.profile) {
+          setProfile(data.profile as Profile)
         }
       } catch (err) {
         console.error("Error fetching profile:", err)
@@ -53,8 +65,6 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false
-      // Cancel any pending requests when component unmounts
-      pb.cancelAllRequests()
     }
   }, [])
 

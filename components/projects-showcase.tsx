@@ -2,25 +2,21 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ExternalLink, Github, Search, Lock, AlertCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import PocketBase from "pocketbase"
+import { usePortfolioItemsQuery } from "@/hooks/use-portfolio-query"
 
-// Initialize PocketBase client
-const pb = new PocketBase("https://remain-faceghost.pockethost.io")
-
-// Type definition for project data
 interface Project {
   id: string
   name: string
   description: string
   image: string
-  tags: string[] // Parsed from JSON string
+  tags: string[]
   demoLink?: string
   url?: string
   category: string
@@ -28,7 +24,6 @@ interface Project {
   comingSoon?: boolean
 }
 
-// Fallback projects in case the API request fails
 const fallbackProjects: Project[] = [
   {
     id: "1",
@@ -54,94 +49,41 @@ const fallbackProjects: Project[] = [
   },
 ]
 
-// Function to fetch projects from PocketBase
-async function fetchProjects(): Promise<Project[]> {
-  try {
-    // Fetch all portfolio images with field type "projects"
-    const records = await pb.collection("portfolio_images").getFullList({
-      sort: "-created",
-      filter: 'field = "projects"',
-    })
-
-    // Map them to the expected project format
-    const projects = records.map((record) => {
-      // Parse tags from JSON string or use directly if already an array
-      let tags: string[] = []
-      if (record.tags) {
-        if (Array.isArray(record.tags)) {
-          // If tags is already an array, use it directly
-          tags = record.tags
-        } else if (typeof record.tags === "string") {
-          try {
-            // Try to parse as JSON
-            tags = JSON.parse(record.tags)
-          } catch (e) {
-            // If parsing fails, try to split by comma
-            tags = record.tags.split(",").map((tag: string) => tag.trim())
-          }
-        }
-      }
-
-      return {
-        id: record.id,
-        name: record.name,
-        description: record.description || "",
-        image: pb.files.getUrl(record, record.image), // Construct full image URL
-        tags,
-        demoLink: record.demoLink,
-        url: record.url,
-        category: record.category,
-        isCompanyProject: record.isCompanyProject || false,
-        comingSoon: record.comingSoon || false,
-      }
-    })
-
-    return projects
-  } catch (err) {
-    console.error("Failed to fetch projects:", err)
-    return fallbackProjects
-  }
-}
-
 export default function ProjectsShowcase() {
+  const { data: portfolioItems, isLoading } = usePortfolioItemsQuery("projects")
   const [projects, setProjects] = useState<Project[]>([])
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [activeFilter, setActiveFilter] = useState("all")
 
-  // Fetch projects data on component mount
   useEffect(() => {
-    const loadProjects = async () => {
-      setIsLoading(true)
-      try {
-        const fetchedProjects = await fetchProjects()
-        setProjects(fetchedProjects)
-        setFilteredProjects(fetchedProjects)
-      } catch (error) {
-        console.error("Error loading projects:", error)
-        setProjects(fallbackProjects)
-        setFilteredProjects(fallbackProjects)
-      } finally {
-        setIsLoading(false)
-      }
-    }
+    const mapped = (portfolioItems || []).map((item) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description || "",
+      image: item.logo || "/placeholder.svg?height=300&width=600",
+      tags: Array.isArray(item.tags) ? item.tags : [],
+      demoLink: item.demoLink || "",
+      url: item.url || "",
+      category: item.category || "",
+      isCompanyProject: Boolean(item.isCompanyProject),
+      comingSoon: Boolean(item.comingSoon),
+    }))
 
-    loadProjects()
-  }, [])
+    const normalized = mapped.length > 0 ? mapped : fallbackProjects
+    setProjects(normalized)
+    setFilteredProjects(normalized)
+  }, [portfolioItems])
 
-  // Handle search and filter changes
   useEffect(() => {
     let result = [...projects]
 
-    // Apply type filter
     if (activeFilter === "company") {
       result = result.filter((project) => project.isCompanyProject)
     } else if (activeFilter === "personal") {
       result = result.filter((project) => !project.isCompanyProject)
     }
 
-    // Apply search query
     if (searchQuery.trim() !== "") {
       const query = searchQuery.toLowerCase()
       result = result.filter(

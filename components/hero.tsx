@@ -4,11 +4,8 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
-import PocketBase from "pocketbase"
 import Image from "next/image"
-
-// Initialize PocketBase client
-const pb = new PocketBase("https://remain-faceghost.pockethost.io")
+import { useProfileQuery } from "@/hooks/use-portfolio-query"
 
 // Type definition for profile data
 interface Profile {
@@ -31,64 +28,24 @@ const fallbackProfile: Profile = {
 export default function Hero() {
   const [text, setText] = useState("")
   const [index, setIndex] = useState(0)
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [phrases, setPhrases] = useState<string[]>(fallbackProfile.tags || [])
+  const { data: profileQueryData } = useProfileQuery()
 
-  // Fetch profile data
+  const profile = {
+    ...fallbackProfile,
+    ...(profileQueryData || {}),
+    tags:
+      Array.isArray(profileQueryData?.tags) && profileQueryData.tags.length > 0
+        ? profileQueryData.tags
+        : fallbackProfile.tags,
+  }
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        setIsLoading(true)
-        // Fetch profile data from portfolio_images collection with field="profile"
-        const records = await pb.collection("portfolio_images").getFullList({
-          sort: "-created",
-          filter: 'field = "profile"',
-        })
-
-        if (records && records.length > 0) {
-          const profileData = records[0]
-
-          // Parse tags if they exist
-          let tags: string[] = []
-          if (profileData.tags) {
-            if (Array.isArray(profileData.tags)) {
-              tags = profileData.tags
-            } else if (typeof profileData.tags === "string") {
-              try {
-                tags = JSON.parse(profileData.tags)
-              } catch (e) {
-                tags = profileData.tags.split(",").map((tag: string) => tag.trim())
-              }
-            }
-          }
-
-          setProfile({
-            id: profileData.id,
-            name: profileData.name || fallbackProfile.name,
-            description: profileData.description || fallbackProfile.description,
-            image: profileData.image ? pb.files.getUrl(profileData, profileData.image) : undefined,
-            tags: tags.length > 0 ? tags : fallbackProfile.tags,
-          })
-
-          // Set phrases for typing animation
-          if (tags.length > 0) {
-            setPhrases(tags)
-          }
-        } else {
-          // Use fallback data if no profile is found
-          setProfile(fallbackProfile)
-        }
-      } catch (error) {
-        console.error("Error fetching profile:", error)
-        setProfile(fallbackProfile)
-      } finally {
-        setIsLoading(false)
-      }
+    const tags = Array.isArray(profile.tags) ? profile.tags : []
+    if (tags.length > 0) {
+      setPhrases(tags)
     }
-
-    fetchProfile()
-  }, [])
+  }, [profile.tags])
 
   // Typing animation effect
   useEffect(() => {
@@ -101,7 +58,7 @@ export default function Hero() {
 
   useEffect(() => {
     let i = 0
-    const currentPhrase = phrases[index]
+    const currentPhrase = phrases[index] || "Software Engineer"
     const typingInterval = setInterval(() => {
       if (i <= currentPhrase.length) {
         setText(currentPhrase.substring(0, i))
@@ -113,14 +70,6 @@ export default function Hero() {
 
     return () => clearInterval(typingInterval)
   }, [index, phrases])
-
-  if (isLoading) {
-    return (
-      <section className="min-h-screen flex items-center justify-center py-20">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500"></div>
-      </section>
-    )
-  }
 
   return (
     <section className="min-h-screen flex items-center justify-center py-20">

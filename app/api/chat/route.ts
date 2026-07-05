@@ -1,38 +1,74 @@
-import { NextResponse } from "next/server"
-import { getOpenAIClient } from "@/lib/openai"
+import { randomUUID } from "crypto"
+import { NextRequest, NextResponse } from "next/server"
+import { getGroqClient } from "@/lib/groq"
+import { getOwnerAssistantPromptFromNeon } from "@/lib/portfolio-repository"
 
-// Context about Meshack Bwire to help the AI answer questions
-const PERSONAL_CONTEXT = `
-About Meshack Bwire:
-- Meshack Bwire is a Software Engineer specializing in POS (Point of Sale) systems and mobile applications.
-- He currently works at Tracom Services Limited as a Software Engineer.
-- He has extensive experience in Android development for mobile and POS applications.
-- He has developed payment applications for banks like Awash Bank (Ethiopia) and Bunna Bank.
-- He has worked on SDKs for CRDB Bank of Tanzania on Nexgo and Telpo POS devices.
-- He has implemented Terminal Management System (TMS) functionalities across POS devices.
-- He has developed applications for cashless fuel transactions.
-- He has experience with Java, Python, Go, C#, JavaScript, SQL, and .NET.
-- He is proficient in frameworks like Spring Boot, Flutter, and Angular.
-- He has experience with cloud environments like AWS, GCP, and Microsoft Azure.
-- He has knowledge of API integration (REST, GraphQL, SOAP).
-- He has a Bachelor of Science in Computer Science from The Co-operative University of Kenya (2018-2022).
-- He previously worked as a Telecommunications Engineer at Guzzer Technologies.
-- He also worked as a Data Engineer (Internship) at African Economic Research Consortium (AERC).
-- He is based in Nairobi, Kenya.
-- His email is bmwandera14@gmail.com.
-- His LinkedIn profile is at linkedin.com/in/meshack-bwire-b2390a213.
-- His GitHub profile is at github.com/bm-ghost.
+export const runtime = "nodejs"
+export const revalidate = 60
 
-Website Navigation:
-- Home page: The main landing page with a hero section and professional network.
-- About page: Information about Meshack's background, skills, and interests.
-- Experience page: Details about Meshack's work experience, skills, and professional credentials.
-- Projects page: Showcase of Meshack's projects, both company and personal.
-- Contact page: Contact information and a form to get in touch with Meshack.
-- Resume page: Meshack's professional resume with download options.
-`
+type ChatTurn = {
+  role: "user" | "assistant"
+  content: string
+}
 
-export async function POST(request: Request) {
+type SessionState = {
+  updatedAt: number
+  turns: ChatTurn[]
+}
+
+const SESSION_COOKIE = "portfolio_chat_session"
+const SESSION_TTL_MS = 30 * 60 * 1000
+const SESSION_MAX_TURNS = 20
+const sessionStore = new Map<string, SessionState>()
+
+function cleanupExpiredSessions() {
+  const now = Date.now()
+  for (const [key, state] of sessionStore.entries()) {
+    if (now - state.updatedAt > SESSION_TTL_MS) {
+      sessionStore.delete(key)
+    }
+  }
+}
+
+function getSessionId(request: NextRequest): string {
+  return request.cookies.get(SESSION_COOKIE)?.value || randomUUID()
+}
+
+function getSessionTurns(sessionId: string): ChatTurn[] {
+  const state = sessionStore.get(sessionId)
+  if (!state) {
+    return []
+  }
+
+  if (Date.now() - state.updatedAt > SESSION_TTL_MS) {
+    sessionStore.delete(sessionId)
+    return []
+  }
+
+  return state.turns
+}
+
+function dedupeTurns(turns: ChatTurn[]): ChatTurn[] {
+  return turns.filter((turn, index) => {
+    if (index === 0) {
+      return true
+    }
+
+    const prev = turns[index - 1]
+    return !(prev.role === turn.role && prev.content === turn.content)
+  })
+}
+
+function setSessionTurns(sessionId: string, turns: ChatTurn[]) {
+  cleanupExpiredSessions()
+  const nextTurns = dedupeTurns(turns).slice(-SESSION_MAX_TURNS)
+  sessionStore.set(sessionId, {
+    updatedAt: Date.now(),
+    turns: nextTurns,
+  })
+}
+
+export async function POST(request: NextRequest) {
   try {
     // Validate request
     if (!request.body) {
@@ -46,48 +82,79 @@ export async function POST(request: Request) {
     }
 
     const { messages } = body
+    const validatedMessages = messages
+      .filter((message: { role: string; content: string }) => {
+        return (
+          message &&
+          typeof message.content === "string" &&
+          message.content.trim().length > 0 &&
+          (message.role === "user" || message.role === "assistant")
+        )
+      })
+      .slice(-14)
+
+    if (validatedMessages.length === 0) {
+      return NextResponse.json({ error: "No valid messages provided" }, { status: 400 })
+    }
+
+    const sessionId = getSessionId(request)
+    const sessionTurns = getSessionTurns(sessionId)
+    const mergedTurns = dedupeTurns([
+      ...sessionTurns,
+      ...validatedMessages.map((message: { role: string; content: string }) => ({
+        role: message.role,
+        content: message.content,
+      })),
+    ]).slice(-SESSION_MAX_TURNS)
 
     try {
-      // Initialize OpenAI client
-      const openai = getOpenAIClient()
+      const ownerContext = await getOwnerAssistantPromptFromNeon()
+      const groq = getGroqClient()
 
-      // Create a conversation with system context and user messages
       const conversation = [
         {
           role: "system",
-          content: `You are Bwire AI Assistant, a helpful AI assistant for Meshack Bwire's portfolio website. 
-          You help visitors learn about Meshack, his skills, experience, and projects. 
-          You also help them navigate the website and find information.
-          Be friendly, professional, and concise in your responses.
-          Here is information about Meshack and the website structure:
-          ${PERSONAL_CONTEXT}`,
+          content: `You are the portfolio assistant for the owner. Answer like the owner would, in first person when relevant, with a confident and professional tone.
+Rules:
+- Be concise, warm, and specific.
+- Prefer facts from the owner context below.
+- If the user asks about unavailable details, say what is known and invite contact.
+- For project questions, mention the most relevant project names and tools.
+- For contact questions, provide the available contact channels from context.
+
+Owner Context:
+${ownerContext}`,
         },
-        ...messages.map((message: { role: string; content: string }) => ({
-          role: message.role,
-          content: message.content,
-        })),
+        ...mergedTurns,
       ]
 
-      // Call OpenAI API
-      const completion = await openai.chat.completions.create({
-        model: "gpt-3.5-turbo", // Using a more widely available model
+      const completion = await groq.chat.completions.create({
+        model: process.env.GROQ_MODEL || "llama-3.1-8b-instant",
         messages: conversation,
-        max_tokens: 500,
-        temperature: 0.7,
+        max_tokens: 450,
+        temperature: 0.3,
       })
 
-      // Extract the assistant's response
-      const assistantMessage = completion.choices[0].message.content
+      const assistantMessage = completion.choices[0].message.content || "I'm not sure how to respond to that."
 
-      return NextResponse.json({ message: assistantMessage || "I'm not sure how to respond to that." })
-    } catch (openaiError: any) {
-      console.error("OpenAI API Error:", openaiError)
+      setSessionTurns(sessionId, [...mergedTurns, { role: "assistant", content: assistantMessage }])
 
-      // Return a more specific error message
+      const response = NextResponse.json({ message: assistantMessage, sessionId })
+      response.cookies.set(SESSION_COOKIE, sessionId, {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: Math.floor(SESSION_TTL_MS / 1000),
+      })
+
+      return response
+    } catch (groqError: any) {
+      console.error("GROQ API Error:", groqError)
+
       return NextResponse.json(
         {
           error: "Error communicating with AI service",
-          details: openaiError.message,
+          details: groqError.message,
         },
         { status: 500 },
       )

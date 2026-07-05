@@ -1,13 +1,10 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { motion } from "framer-motion"
 import { useInView } from "react-intersection-observer"
 import { ExternalLink } from "lucide-react"
-import PocketBase from "pocketbase"
-
-// Initialize PocketBase client
-const pb = new PocketBase("https://remain-faceghost.pockethost.io")
+import { usePortfolioItemsQuery } from "@/hooks/use-portfolio-query"
 
 // Type definition for partner/project data
 interface PortfolioItem {
@@ -18,7 +15,7 @@ interface PortfolioItem {
   category: string
   field: string
   description?: string
-  tags?: string
+  tags?: string[]
   demoLink?: string
   isCompanyProject?: boolean
 }
@@ -57,37 +54,6 @@ const fallbackItems = [
   },
 ]
 
-// Function to fetch items from PocketBase based on field type
-async function fetchPortfolioItems(fieldType: string): Promise<PortfolioItem[]> {
-  try {
-    // Fetch all portfolio images with the specified field type
-    const records = await pb.collection("portfolio_images").getFullList({
-      sort: "-created",
-      filter: `field = "${fieldType}"`,
-    })
-
-    // Map them to the expected format
-    const items = records.map((record) => ({
-      id: record.id,
-      name: record.name,
-      logo: pb.files.getUrl(record, record.image), // Construct full image URL
-      url: record.url,
-      category: record.category,
-      field: record.field,
-      description: record.description,
-      tags: record.tags,
-      demoLink: record.demoLink,
-      isCompanyProject: record.isCompanyProject,
-    }))
-
-    return items
-  } catch (err) {
-    console.error(`Failed to fetch ${fieldType}:`, err)
-    // Return only fallback items that match the requested field type
-    return fallbackItems.filter((item) => item.field === fieldType)
-  }
-}
-
 interface PartnerLogosProps {
   fieldType: "partners" | "projects"
   title?: string
@@ -104,29 +70,11 @@ export default function PartnerLogos({
     threshold: 0.1,
   })
 
-  const [items, setItems] = useState<PortfolioItem[]>([])
+  const { data, isLoading } = usePortfolioItemsQuery(fieldType)
+  const items = (data && data.length > 0 ? data : fallbackItems.filter((item) => item.field === fieldType)) as PortfolioItem[]
   const [activeCategory, setActiveCategory] = useState("All")
   const [hoveredLogo, setHoveredLogo] = useState<string | null>(null)
   const [imageLoadError, setImageLoadError] = useState<Record<string, boolean>>({})
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Fetch items data on component mount
-  useEffect(() => {
-    const loadItems = async () => {
-      setIsLoading(true)
-      try {
-        const fetchedItems = await fetchPortfolioItems(fieldType)
-        setItems(fetchedItems)
-      } catch (error) {
-        console.error(`Error loading ${fieldType}:`, error)
-        setItems(fallbackItems.filter((item) => item.field === fieldType))
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    loadItems()
-  }, [fieldType])
 
   // Extract unique categories from items
   const categories = Array.from(new Set(items.map((item) => item.category)))

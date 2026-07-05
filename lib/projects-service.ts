@@ -1,10 +1,6 @@
-import { pb } from "@/lib/pocketbase"
-
 // Projects types
 export interface Project {
   id: string
-  collectionId: string
-  collectionName: string
   created: string
   updated: string
   title: string
@@ -18,12 +14,10 @@ export interface Project {
   aiTags?: string[]
 }
 
-// Fallback data in case the PocketBase request fails
+// Fallback data in case the API request fails
 export const fallbackProjectsData: Project[] = [
   {
     id: "1",
-    collectionId: "",
-    collectionName: "",
     created: "",
     updated: "",
     title: "Predictive Inventory System",
@@ -39,8 +33,6 @@ export const fallbackProjectsData: Project[] = [
   },
   {
     id: "2",
-    collectionId: "",
-    collectionName: "",
     created: "",
     updated: "",
     title: "Customer Behavior Analysis",
@@ -56,8 +48,6 @@ export const fallbackProjectsData: Project[] = [
   },
   {
     id: "3",
-    collectionId: "",
-    collectionName: "",
     created: "",
     updated: "",
     title: "Smart POS Assistant",
@@ -73,75 +63,23 @@ export const fallbackProjectsData: Project[] = [
   },
 ]
 
-// Function to safely check if a collection exists
-async function collectionExists(collectionName: string): Promise<boolean> {
-  try {
-    // Try to get a single record to check if collection exists
-    await pb.collection(collectionName).getList(1, 1)
-    return true
-  } catch (error: any) {
-    // Check if the error is because the collection doesn't exist
-    if (error?.status === 404 || error?.message?.includes("not found")) {
-      console.warn(`Collection '${collectionName}' does not exist.`)
-      return false
-    }
-    // For other errors, assume the collection might exist but there's another issue
-    return true
-  }
-}
-
 // Function to get all projects
 export async function getAllProjects(): Promise<Project[]> {
   try {
-    // Check if projects collection exists
-    const exists = await collectionExists("projects")
-    if (!exists) {
-      console.warn("Projects collection does not exist. Using fallback data.")
-      return fallbackProjectsData
+    const response = await fetch("/api/projects", { cache: "force-cache" })
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`)
     }
 
-    const timestamp = new Date().getTime()
-    const records = await pb.collection("projects").getFullList({
-      sort: "-created",
-      requestKey: `projects-${timestamp}`,
-    })
+    const data = await response.json()
+    const records = data?.projects as Project[]
 
     if (!records || records.length === 0) {
       console.warn("No projects found in the database. Using fallback data.")
       return fallbackProjectsData
     }
 
-    return records.map((project: any) => {
-      // Parse tools_used as an array if it's a string
-      const toolsUsed =
-        typeof project.tools_used === "string"
-          ? project.tools_used.split(",").map((tool: string) => tool.trim())
-          : project.tools_used || []
-
-      // Parse aiTags if available
-      const aiTags = project.ai_tags
-        ? typeof project.ai_tags === "string"
-          ? project.ai_tags.split(",").map((tag: string) => tag.trim())
-          : project.ai_tags
-        : []
-
-      return {
-        id: project.id,
-        collectionId: project.collectionId,
-        collectionName: project.collectionName,
-        created: project.created,
-        updated: project.updated,
-        title: project.title || "Untitled Project",
-        description: project.description || "No description available",
-        tools_used: project.tools_used || "",
-        link: project.link || "",
-        profile: project.profile || "",
-        image: project.image || "/placeholder.svg?height=300&width=600",
-        github: project.github || "https://github.com",
-        demo: project.demo || project.link || "https://demo.com",
-        aiTags: aiTags,
-      }
-    })
+    return records
   } catch (error) {
     console.error("Error fetching projects:", error)
     return fallbackProjectsData
@@ -151,28 +89,15 @@ export async function getAllProjects(): Promise<Project[]> {
 // Function to search projects
 export async function searchProjects(query: string): Promise<Project[]> {
   try {
-    // Check if projects collection exists
-    const exists = await collectionExists("projects")
-    if (!exists) {
-      console.warn("Projects collection does not exist. Using fallback data for search.")
-      // Search in fallback data
-      const lowercaseQuery = query.toLowerCase()
-      return fallbackProjectsData.filter(
-        (project) =>
-          project.title.toLowerCase().includes(lowercaseQuery) ||
-          project.description.toLowerCase().includes(lowercaseQuery) ||
-          project.tools_used.toLowerCase().includes(lowercaseQuery),
-      )
+    const response = await fetch(`/api/projects?search=${encodeURIComponent(query)}`, { cache: "force-cache" })
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`)
     }
 
-    const timestamp = new Date().getTime()
-    const records = await pb.collection("projects").getList(1, 50, {
-      filter: `title ~ "${query}" || description ~ "${query}" || tools_used ~ "${query}"`,
-      sort: "-created",
-      requestKey: `projects-search-${timestamp}`,
-    })
+    const data = await response.json()
+    const records = data?.projects as Project[]
 
-    if (!records || !records.items || records.items.length === 0) {
+    if (!records || records.length === 0) {
       // If no results, search in fallback data
       const lowercaseQuery = query.toLowerCase()
       return fallbackProjectsData.filter(
@@ -183,37 +108,7 @@ export async function searchProjects(query: string): Promise<Project[]> {
       )
     }
 
-    return records.items.map((project: any) => {
-      // Parse tools_used as an array if it's a string
-      const toolsUsed =
-        typeof project.tools_used === "string"
-          ? project.tools_used.split(",").map((tool: string) => tool.trim())
-          : project.tools_used || []
-
-      // Parse aiTags if available
-      const aiTags = project.ai_tags
-        ? typeof project.ai_tags === "string"
-          ? project.ai_tags.split(",").map((tag: string) => tag.trim())
-          : project.ai_tags
-        : []
-
-      return {
-        id: project.id,
-        collectionId: project.collectionId,
-        collectionName: project.collectionName,
-        created: project.created,
-        updated: project.updated,
-        title: project.title || "Untitled Project",
-        description: project.description || "No description available",
-        tools_used: project.tools_used || "",
-        link: project.link || "",
-        profile: project.profile || "",
-        image: project.image || "/placeholder.svg?height=300&width=600",
-        github: project.github || "https://github.com",
-        demo: project.demo || project.link || "https://demo.com",
-        aiTags: aiTags,
-      }
-    })
+    return records
   } catch (error) {
     console.error("Error searching projects:", error)
     // Search in fallback data
@@ -230,55 +125,9 @@ export async function searchProjects(query: string): Promise<Project[]> {
 // Function to get a single project by ID
 export async function getProjectById(id: string): Promise<Project | null> {
   try {
-    // Check if projects collection exists
-    const exists = await collectionExists("projects")
-    if (!exists) {
-      console.warn("Projects collection does not exist. Using fallback data for project lookup.")
-      // Look in fallback data
-      const project = fallbackProjectsData.find((p) => p.id === id)
-      return project || null
-    }
-
-    const timestamp = new Date().getTime()
-    const record = await pb.collection("projects").getOne(id, {
-      requestKey: `project-${timestamp}-${id}`,
-    })
-
-    if (!record) {
-      // If not found, look in fallback data
-      const project = fallbackProjectsData.find((p) => p.id === id)
-      return project || null
-    }
-
-    // Parse tools_used as an array if it's a string
-    const toolsUsed =
-      typeof record.tools_used === "string"
-        ? record.tools_used.split(",").map((tool: string) => tool.trim())
-        : record.tools_used || []
-
-    // Parse aiTags if available
-    const aiTags = record.ai_tags
-      ? typeof record.ai_tags === "string"
-        ? record.ai_tags.split(",").map((tag: string) => tag.trim())
-        : record.ai_tags
-      : []
-
-    return {
-      id: record.id,
-      collectionId: record.collectionId,
-      collectionName: record.collectionName,
-      created: record.created,
-      updated: record.updated,
-      title: record.title || "Untitled Project",
-      description: record.description || "No description available",
-      tools_used: record.tools_used || "",
-      link: record.link || "",
-      profile: record.profile || "",
-      image: record.image || "/placeholder.svg?height=300&width=600",
-      github: record.github || "https://github.com",
-      demo: record.demo || record.link || "https://demo.com",
-      aiTags: aiTags,
-    }
+    const projects = await getAllProjects()
+    const project = projects.find((p) => p.id === id)
+    return project || null
   } catch (error) {
     console.error(`Error fetching project with ID ${id}:`, error)
     // Look in fallback data
@@ -290,57 +139,14 @@ export async function getProjectById(id: string): Promise<Project | null> {
 // Function to get projects by profile ID
 export async function getProjectsByProfile(profileId: string): Promise<Project[]> {
   try {
-    // Check if projects collection exists
-    const exists = await collectionExists("projects")
-    if (!exists) {
-      console.warn("Projects collection does not exist. Using fallback data for profile projects.")
-      // Filter fallback data by profile ID (though this likely won't match)
-      return fallbackProjectsData.filter((p) => p.profile === profileId)
+    const response = await fetch(`/api/projects?profileId=${encodeURIComponent(profileId)}`, { cache: "force-cache" })
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`)
     }
 
-    const timestamp = new Date().getTime()
-    const records = await pb.collection("projects").getList(1, 50, {
-      filter: `profile = "${profileId}"`,
-      sort: "-created",
-      requestKey: `projects-profile-${timestamp}-${profileId}`,
-    })
-
-    if (!records || !records.items || records.items.length === 0) {
-      // If no results, return empty array or fallback
-      return fallbackProjectsData
-    }
-
-    return records.items.map((project: any) => {
-      // Parse tools_used as an array if it's a string
-      const toolsUsed =
-        typeof project.tools_used === "string"
-          ? project.tools_used.split(",").map((tool: string) => tool.trim())
-          : project.tools_used || []
-
-      // Parse aiTags if available
-      const aiTags = project.ai_tags
-        ? typeof project.ai_tags === "string"
-          ? project.ai_tags.split(",").map((tag: string) => tag.trim())
-          : project.ai_tags
-        : []
-
-      return {
-        id: project.id,
-        collectionId: project.collectionId,
-        collectionName: project.collectionName,
-        created: project.created,
-        updated: project.updated,
-        title: project.title || "Untitled Project",
-        description: project.description || "No description available",
-        tools_used: project.tools_used || "",
-        link: project.link || "",
-        profile: project.profile || "",
-        image: project.image || "/placeholder.svg?height=300&width=600",
-        github: project.github || "https://github.com",
-        demo: project.demo || project.link || "https://demo.com",
-        aiTags: aiTags,
-      }
-    })
+    const data = await response.json()
+    const records = data?.projects as Project[]
+    return records || []
   } catch (error) {
     console.error(`Error fetching projects for profile ${profileId}:`, error)
     return fallbackProjectsData

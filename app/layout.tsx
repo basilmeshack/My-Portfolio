@@ -6,6 +6,7 @@ import Header from "@/components/header"
 import Footer from "@/components/footer"
 import NeuralBackground from "@/components/neural-background"
 import AIAssistant from "@/components/ai-assistant"
+import { QueryProvider } from "@/components/query-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -24,11 +25,13 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.className} text-gray-100`}>
-        <NeuralBackground />
-        <Header />
-        {children}
-        <Footer />
-        <AIAssistant />
+        <QueryProvider>
+          <NeuralBackground />
+          <Header />
+          {children}
+          <Footer />
+          <AIAssistant />
+        </QueryProvider>
       </body>
     </html>
   )

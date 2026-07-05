@@ -1,11 +1,23 @@
 import { NextResponse } from "next/server"
 import { getProfileFromNeon } from "@/lib/portfolio-repository"
+import { hasNeonDatabaseUrl } from "@/lib/neon"
 
 export const runtime = "nodejs"
 export const revalidate = 300
 
 export async function GET() {
   try {
+    if (!hasNeonDatabaseUrl()) {
+      return NextResponse.json(
+        { profile: null, fallback: true },
+        {
+          headers: {
+            "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+          },
+        },
+      )
+    }
+
     const profile = await getProfileFromNeon()
     const normalizedProfile = profile
       ? {

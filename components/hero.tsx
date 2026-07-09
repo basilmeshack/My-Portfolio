@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
@@ -22,7 +22,7 @@ const fallbackProfile: Profile = {
   name: "Meshack Bwire",
   description:
     "A proactive and results-driven Software Engineer with extensive experience in POS systems, mobile applications, and API integrations.",
-  tags: ["Software Engineer", "POS Systems Specialist", "API Integration Expert", "Mobile App Developer"],
+  tags: ["Senior POS Engineer", "Mobile Application Developer", "AI Intergration Specialist", "Senior Payment Systems Expert"],
 }
 
 export default function Hero() {
@@ -31,19 +31,24 @@ export default function Hero() {
   const [phrases, setPhrases] = useState<string[]>(fallbackProfile.tags || [])
   const { data: profileQueryData } = useProfileQuery()
 
-  const profile = {
-    ...fallbackProfile,
-    ...(profileQueryData || {}),
-    tags:
-      Array.isArray(profileQueryData?.tags) && profileQueryData.tags.length > 0
-        ? profileQueryData.tags
-        : fallbackProfile.tags,
-  }
+  const profile = useMemo(
+    () => ({
+      ...fallbackProfile,
+      ...(profileQueryData || {}),
+      tags:
+        Array.isArray(profileQueryData?.tags) && profileQueryData.tags.length > 0
+          ? profileQueryData.tags
+          : fallbackProfile.tags,
+    }),
+    [profileQueryData],
+  )
 
   useEffect(() => {
     const tags = Array.isArray(profile.tags) ? profile.tags : []
     if (tags.length > 0) {
       setPhrases(tags)
+      setIndex(0)
+      setText("")
     }
   }, [profile.tags])
 

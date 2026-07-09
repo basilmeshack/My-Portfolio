@@ -186,7 +186,7 @@ export default function AIAssistant() {
     if (lowerMessage.includes("about") || lowerMessage.includes("about you")) {
       return {
         path: "/about",
-        message: "Let me show you the about page where you can learn more about Meshack.",
+        message: "Let me show you the about page where you can learn more about Me.",
       }
     }
 
@@ -200,21 +200,21 @@ export default function AIAssistant() {
     if (lowerMessage.includes("contact") || lowerMessage.includes("get in touch")) {
       return {
         path: "/contact",
-        message: "I'll take you to the contact page where you can reach out to Meshack.",
+        message: "I'll take you to the contact page where you can reach out to Me.",
       }
     }
 
     if (lowerMessage.includes("resume") || lowerMessage.includes("cv")) {
       return {
         path: "/resume",
-        message: "Here's Meshack's resume with his professional experience.",
+        message: "Here's my resume with his professional experience.",
       }
     }
 
     if (lowerMessage.includes("experience") || lowerMessage.includes("work history")) {
       return {
         path: "/experience",
-        message: "Let me show you Meshack's professional experience.",
+        message: "Let me show you my professional experience.",
       }
     }
 

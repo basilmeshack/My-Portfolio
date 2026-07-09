@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState, useTransition } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import RichTextEditor from "@/components/rich-text-editor"
 
 type ContactChannel = {
@@ -130,6 +131,7 @@ export default function ProfileEditorForm() {
   const [aboutHighlightsText, setAboutHighlightsText] = useState("")
   const [interestsText, setInterestsText] = useState("")
   const [activeTab, setActiveTab] = useState<"profile" | "projects" | "portfolio" | "experience">("profile")
+  const queryClient = useQueryClient()
 
   const projectOptions = useMemo(
     () => cmsData.projects.map((project) => ({ key: project.clientKey, title: project.title || "Untitled project" })),
@@ -392,6 +394,13 @@ export default function ProfileEditorForm() {
       setError("Save succeeded but failed to reload data")
       return
     }
+
+    await queryClient.invalidateQueries({
+      predicate: (query) => {
+        const key = query.queryKey[0]
+        return key === "profile" || key === "portfolio-items"
+      },
+    })
 
     hydrateCmsData(result.data)
     setNewPassword("")

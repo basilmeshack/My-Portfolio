@@ -28,14 +28,20 @@ export function useProfileQuery() {
   return useQuery({
     queryKey: ["profile"],
     queryFn: async (): Promise<ClientProfile | null> => {
-      const response = await fetch("/api/profile", { cache: "force-cache" })
+      const response = await fetch("/api/profile", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      })
       if (!response.ok) {
         throw new Error(`Request failed with status ${response.status}`)
       }
       const data = await response.json()
       return data?.profile ?? null
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   })
 }
 
@@ -44,7 +50,8 @@ export function usePortfolioItemsQuery(fieldType: string) {
     queryKey: ["portfolio-items", fieldType],
     queryFn: async (): Promise<PortfolioItem[]> => {
       const response = await fetch(`/api/portfolio-items?field=${encodeURIComponent(fieldType)}`, {
-        cache: "force-cache",
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
       })
 
       if (!response.ok) {
@@ -54,6 +61,9 @@ export function usePortfolioItemsQuery(fieldType: string) {
       const data = await response.json()
       return (data?.items || []) as PortfolioItem[]
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   })
 }

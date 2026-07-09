@@ -31,15 +31,17 @@ export default function ContactForm() {
     setSubmitStatus(null)
 
     try {
-      // In a real application, you would send the form data to your backend
-      // await fetch('/api/contact', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData)
-      // })
+      const response = await fetch("/api/email/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const data = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Unable to send your message right now.")
+      }
 
       setSubmitStatus("success")
       setFormData({

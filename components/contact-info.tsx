@@ -1,16 +1,17 @@
-"use client"
-
-import { motion } from "framer-motion"
 import { Mail, Phone, MapPin, Linkedin, Github } from "lucide-react"
+import { getPublicProfilePresentation } from "@/lib/profile-public"
 
-export default function ContactInfo() {
+export default async function ContactInfo() {
+  const presentation = await getPublicProfilePresentation()
+  const profile = presentation?.profile
+  const channels = profile?.contact_channels || []
+  const email = channels.find((channel) => channel.channel_type === "email")
+  const phone = channels.find((channel) => channel.channel_type === "phone")
+  const linkedin = channels.find((channel) => channel.channel_type === "linkedin")
+  const github = channels.find((channel) => channel.channel_type === "github")
+
   return (
-    <motion.div
-      className="bg-gray-800/80 backdrop-blur-sm p-6 rounded-lg shadow-md"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
+    <div className="bg-gray-800/80 backdrop-blur-sm p-6 rounded-lg shadow-md">
       <h2 className="text-2xl font-semibold mb-6 text-white">Contact Information</h2>
 
       <div className="space-y-6">
@@ -20,8 +21,8 @@ export default function ContactInfo() {
           </div>
           <div>
             <h3 className="text-lg font-medium text-white">Email</h3>
-            <a href="mailto:bmwandera14@gmail.com" className="text-purple-400 hover:underline">
-              bmwandera14@gmail.com
+            <a href={email?.url || `mailto:${profile?.email || ""}`} className="text-purple-400 hover:underline">
+              {email?.value || profile?.email || "Not available"}
             </a>
           </div>
         </div>
@@ -32,8 +33,8 @@ export default function ContactInfo() {
           </div>
           <div>
             <h3 className="text-lg font-medium text-white">Phone</h3>
-            <a href="tel:+254794142204" className="text-purple-400 hover:underline">
-              +254 794 142 204
+            <a href={phone?.url || `tel:${(profile?.phone || "").replace(/\s+/g, "")}`} className="text-purple-400 hover:underline">
+              {phone?.handle || profile?.phone || "Not available"}
             </a>
           </div>
         </div>
@@ -44,8 +45,7 @@ export default function ContactInfo() {
           </div>
           <div>
             <h3 className="text-lg font-medium text-white">Location</h3>
-            <p className="text-gray-300">Nairobi, Kenya</p>
-            <p className="text-gray-300">P.O Box 268-50400</p>
+            <p className="text-gray-300">{profile?.location || "Nairobi, Kenya"}</p>
           </div>
         </div>
 
@@ -56,12 +56,12 @@ export default function ContactInfo() {
           <div>
             <h3 className="text-lg font-medium text-white">LinkedIn</h3>
             <a
-              href="https://www.linkedin.com/in/meshack-bwire-b2390a213/"
+              href={linkedin?.url || profile?.linkedin_url || "#"}
               target="_blank"
               rel="noopener noreferrer"
               className="text-purple-400 hover:underline"
             >
-              Meshack Bwire
+              {linkedin?.handle || "LinkedIn Profile"}
             </a>
           </div>
         </div>
@@ -73,12 +73,12 @@ export default function ContactInfo() {
           <div>
             <h3 className="text-lg font-medium text-white">GitHub</h3>
             <a
-              href="https://github.com/bm-ghost"
+              href={github?.url || profile?.github_url || "#"}
               target="_blank"
               rel="noopener noreferrer"
               className="text-purple-400 hover:underline"
             >
-              bm-ghost
+              {github?.handle || "GitHub"}
             </a>
           </div>
         </div>
@@ -88,7 +88,7 @@ export default function ContactInfo() {
         <h3 className="text-lg font-medium mb-4 text-white">Connect With Me</h3>
         <div className="flex space-x-4">
           <a
-            href="https://www.linkedin.com/in/meshack-bwire-b2390a213/"
+            href={linkedin?.url || profile?.linkedin_url || "#"}
             target="_blank"
             rel="noopener noreferrer"
             className="h-10 w-10 rounded-full bg-[#0077B5] flex items-center justify-center text-white hover:bg-opacity-80 transition-colors"
@@ -97,7 +97,7 @@ export default function ContactInfo() {
             <Linkedin className="h-5 w-5" />
           </a>
           <a
-            href="https://github.com/bm-ghost"
+            href={github?.url || profile?.github_url || "#"}
             target="_blank"
             rel="noopener noreferrer"
             className="h-10 w-10 rounded-full bg-[#333] flex items-center justify-center text-white hover:bg-opacity-80 transition-colors"
@@ -106,7 +106,7 @@ export default function ContactInfo() {
             <Github className="h-5 w-5" />
           </a>
           <a
-            href="mailto:bmwandera14@gmail.com"
+            href={email?.url || `mailto:${profile?.email || ""}`}
             className="h-10 w-10 rounded-full bg-[#EA4335] flex items-center justify-center text-white hover:bg-opacity-80 transition-colors"
             aria-label="Email"
           >
@@ -114,6 +114,6 @@ export default function ContactInfo() {
           </a>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }

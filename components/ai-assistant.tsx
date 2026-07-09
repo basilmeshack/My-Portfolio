@@ -146,7 +146,15 @@ export default function AIAssistant() {
     }
 
     if (lowerQuestion.includes("contact") || lowerQuestion.includes("email") || lowerQuestion.includes("reach")) {
-      return "You can contact Meshack via email at bmwandera14@gmail.com or through the contact form on the Contact page."
+      return [
+        "Let's connect through my preferred channels:",
+        "",
+        "Email: mailto:bmwandera14@gmail.com",
+        "Phone: tel:+254794142204",
+        "LinkedIn: https://www.linkedin.com/in/meshack-bwire-b2390a213/",
+        "GitHub: https://github.com/bm-ghost",
+        "Calendly: https://calendly.com",
+      ].join("\n")
     }
 
     if (lowerQuestion.includes("skill") || lowerQuestion.includes("technology")) {
@@ -185,7 +193,7 @@ export default function AIAssistant() {
     if (lowerMessage.includes("project") || lowerMessage.includes("portfolio")) {
       return {
         path: "/projects",
-        message: "I'll direct you to the projects page to see Meshack's work.",
+        message: "I'll direct you to the projects page to see my work.",
       }
     }
 
@@ -222,6 +230,37 @@ export default function AIAssistant() {
 
   const toggleMinimize = () => {
     setIsMinimized(!isMinimized)
+  }
+
+  const linkifyContent = (content: string) => {
+    const parts = content.split(/(https?:\/\/[^\s]+|mailto:[^\s]+|tel:[^\s]+)/g)
+
+    return parts.map((part, index) => {
+      if (!part) {
+        return null
+      }
+
+      if (!/^(https?:\/\/|mailto:|tel:)/.test(part)) {
+        return <span key={`text-${index}`}>{part}</span>
+      }
+
+      const label =
+        part.startsWith("mailto:") || part.startsWith("tel:")
+          ? part.replace(/^(mailto:|tel:)/, "")
+          : part.replace(/^https?:\/\//, "")
+
+      return (
+        <a
+          key={`link-${index}`}
+          href={part}
+          target={part.startsWith("http") ? "_blank" : undefined}
+          rel={part.startsWith("http") ? "noopener noreferrer" : undefined}
+          className="underline decoration-purple-400 underline-offset-2 hover:text-purple-300"
+        >
+          {label}
+        </a>
+      )
+    })
   }
 
   return (
@@ -313,7 +352,12 @@ export default function AIAssistant() {
                 <span>Bwire AI Assistant</span>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={toggleMinimize} className="text-white/80 hover:text-white">
+                <button
+                  onClick={toggleMinimize}
+                  className="text-white/80 hover:text-white"
+                  title={isMinimized ? "Expand assistant" : "Minimize assistant"}
+                  aria-label={isMinimized ? "Expand assistant" : "Minimize assistant"}
+                >
                   {isMinimized ? (
                     <motion.div initial={{ rotate: 180 }} animate={{ rotate: 0 }} transition={{ duration: 0.3 }}>
                       <ChevronRight size={20} />
@@ -330,6 +374,8 @@ export default function AIAssistant() {
                     setIsOpen(false)
                   }}
                   className="text-white/80 hover:text-white"
+                  title="Close assistant"
+                  aria-label="Close assistant"
                 >
                   <X size={20} />
                 </button>
@@ -355,7 +401,9 @@ export default function AIAssistant() {
                             : "bg-white dark:bg-zinc-700 text-gray-800 dark:text-gray-200 shadow-sm"
                         }`}
                       >
-                        {message.content}
+                        <div className="whitespace-pre-wrap break-words">
+                          {message.role === "assistant" ? linkifyContent(message.content) : message.content}
+                        </div>
                       </div>
                     </div>
                   ))}

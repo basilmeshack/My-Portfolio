@@ -11,9 +11,21 @@ export interface Profile {
   phone: string
   email: string
   linkedin_url: string
+  github_url?: string
   summary: string
   image?: string
   tags?: string[]
+  contact_channels?: Array<{
+    id: string
+    channel_type: string
+    label: string
+    handle: string
+    value: string
+    url: string
+    is_public: boolean
+    is_primary: boolean
+    display_order: number
+  }>
 }
 
 interface ProfileContextType {

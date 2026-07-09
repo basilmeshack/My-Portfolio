@@ -1,8 +1,11 @@
 import AboutCard from "@/components/about-card"
 import TechStack from "@/components/tech-stack"
 import { Briefcase } from "lucide-react"
+import { getPublicProfilePresentation } from "@/lib/profile-public"
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const presentation = await getPublicProfilePresentation()
+
   return (
     <main className="container mx-auto px-4 py-16 max-w-6xl">
       <h1 className="text-4xl font-bold mb-8 text-center">
@@ -21,8 +24,8 @@ export default function AboutPage() {
               Professional
             </h2>
             <p className="text-gray-300">
-              Software Engineer specializing in POS systems integration, mobile applications, and API development with a
-              focus on secure payment solutions.
+              {presentation?.editable.professionalBlurb ||
+                "Software Engineer specializing in POS systems integration, mobile applications, and API development with a focus on secure payment solutions."}
             </p>
           </div>
 

@@ -1,7 +1,9 @@
 import { randomUUID } from "crypto"
+import type OpenAI from "openai"
 import { NextRequest, NextResponse } from "next/server"
 import { getGroqClient } from "@/lib/groq"
-import { getOwnerAssistantPromptFromNeon } from "@/lib/portfolio-repository"
+import { getAssistantKnowledgeContext } from "@/lib/assistant-knowledge-service"
+import { hasNeonDatabaseUrl } from "@/lib/neon"
 
 export const runtime = "nodejs"
 export const revalidate = 60
@@ -20,6 +22,20 @@ const SESSION_COOKIE = "portfolio_chat_session"
 const SESSION_TTL_MS = 30 * 60 * 1000
 const SESSION_MAX_TURNS = 20
 const sessionStore = new Map<string, SessionState>()
+
+const FALLBACK_OWNER_CONTEXT = [
+  "Owner Name: Meshack Bwire",
+  "Summary: Software Engineer specializing in POS systems, backend services, and mobile applications.",
+  "Location: Nairobi, Kenya",
+  "Email: bmwandera14@gmail.com",
+  "Phone: +254 794 142 204",
+  "LinkedIn: https://www.linkedin.com/in/meshack-bwire-b2390a213/",
+  "GitHub: https://github.com/bm-ghost",
+  "Contact Channels: Primary Email: mailto:bmwandera14@gmail.com | Primary Phone: tel:+254794142204 | LinkedIn: https://www.linkedin.com/in/meshack-bwire-b2390a213/ | GitHub: https://github.com/bm-ghost",
+  "Portfolio sections (counts): N/A",
+  "Projects:",
+  "1. Portfolio Website | Personal portfolio built with Next.js and Tailwind CSS. | tools: Next.js, React, TypeScript, Tailwind CSS | tags: portfolio, web | demo: N/A",
+].join("\n")
 
 function cleanupExpiredSessions() {
   const now = Date.now()
@@ -68,6 +84,20 @@ function setSessionTurns(sessionId: string, turns: ChatTurn[]) {
   })
 }
 
+async function resolveOwnerContext(query: string): Promise<string> {
+  if (!hasNeonDatabaseUrl()) {
+    return FALLBACK_OWNER_CONTEXT
+  }
+
+  try {
+    const ownerContext = await getAssistantKnowledgeContext(query)
+    return ownerContext.trim() ? ownerContext : FALLBACK_OWNER_CONTEXT
+  } catch (error) {
+    console.error("Failed to load assistant context from Neon:", error)
+    return FALLBACK_OWNER_CONTEXT
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Validate request
@@ -108,19 +138,28 @@ export async function POST(request: NextRequest) {
     ]).slice(-SESSION_MAX_TURNS)
 
     try {
-      const ownerContext = await getOwnerAssistantPromptFromNeon()
+      const latestUserMessage = [...mergedTurns].reverse().find((turn) => turn.role === "user")?.content || ""
+      const ownerContext = await resolveOwnerContext(latestUserMessage)
       const groq = getGroqClient()
 
-      const conversation = [
+      const conversation: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
         {
           role: "system",
           content: `You are the portfolio assistant for the owner. Answer like the owner would, in first person when relevant, with a confident and professional tone.
 Rules:
 - Be concise, warm, and specific.
-- Prefer facts from the owner context below.
+- Use first-person voice for portfolio statements (for example: "my projects", "my experience", "my work"), not third-person phrasing like "Meshack's work".
+- Use the retrieved database knowledge below as the primary source of truth for anything about Bwire, Meshack, the portfolio, projects, partners, skills, contact details, education, or work history.
+- Never invent years, counts, links, employers, or placeholder values.
+- If the question is about Bwire or professional topics and the database context does not support the answer, say you do not have that detail yet.
+- If the question is outside Bwire's professional scope, you may answer briefly as a general assistant, but do not mix in invented portfolio facts.
 - If the user asks about unavailable details, say what is known and invite contact.
 - For project questions, mention the most relevant project names and tools.
-- For contact questions, provide the available contact channels from context.
+- For contact questions, present channels as a polished mini contact card with one item per line and explicit links.
+- Make links directly clickable by returning full URL schemes such as https://, mailto:, and tel:.
+- For contact questions, avoid bland phrasing like "You can reach me through various channels"; use a confident, polished intro and a clean list layout.
+- For contact questions, do not use markdown styling characters like ** or __; return clean plain-text labels and links.
+- Start contact responses with: "Here is the best way to reach me:".
 
 Owner Context:
 ${ownerContext}`,

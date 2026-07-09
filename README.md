@@ -25,6 +25,10 @@ NEON_DATABASE_URL=postgresql://USER:PASSWORD@HOST/DB?sslmode=require&channel_bin
 POCKETBASE_URL=https://remain-faceghost.pockethost.io
 POCKETBASE_ADMIN_EMAIL=
 POCKETBASE_ADMIN_PASSWORD=
+REVALIDATE_SECRET=
+ASSISTANT_REFRESH_SECRET=
+OPENAI_API_KEY=
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 ```
 
 `POCKETBASE_ADMIN_EMAIL` and `POCKETBASE_ADMIN_PASSWORD` are optional (only required for protected collections).
@@ -68,6 +72,12 @@ The application runtime now reads from Neon (PostgreSQL) via Next.js API routes:
 - `/api/profile`
 - `/api/projects`
 - `/api/portfolio-items`
+
+The AI assistant also builds a database-backed knowledge catalog in Neon:
+
+- `assistant_knowledge_documents` stores assistant-ready documents derived from `profiles`, `projects`, and `portfolio_items`
+- `/api/assistant/refresh` refreshes assistant knowledge and can optionally sync embeddings when `OPENAI_API_KEY` is configured
+- `scripts/verify-neon-data.mjs` reports assistant document and embedding counts
 
 PocketBase is now only required for migration workflows (`pnpm db:migrate:pocketbase-to-neon`) and can be retired after you verify Neon data and app behavior in production.
 

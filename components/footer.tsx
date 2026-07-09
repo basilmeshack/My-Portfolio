@@ -1,21 +1,30 @@
 import Link from "next/link"
 import { Github, Linkedin, Mail, Phone } from "lucide-react"
+import { getPublicProfilePresentation } from "@/lib/profile-public"
 
-export default function Footer() {
+export default async function Footer() {
+  const presentation = await getPublicProfilePresentation()
+  const profile = presentation?.profile
+  const channels = profile?.contact_channels || []
+  const github = channels.find((channel) => channel.channel_type === "github")
+  const linkedin = channels.find((channel) => channel.channel_type === "linkedin")
+  const email = channels.find((channel) => channel.channel_type === "email")
+  const phone = channels.find((channel) => channel.channel_type === "phone")
+
   return (
     <footer className="bg-gray-900/80 backdrop-blur-md border-t border-gray-800">
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row justify-between items-center mb-4">
           <div className="mb-4 md:mb-0">
             <Link href="/" className="text-xl font-bold text-purple-400">
-              Meshack Bwire
+              {profile?.full_name || "Meshack Bwire"}
             </Link>
             <p className="text-gray-400 text-sm mt-1">Software Engineer | POS Systems Specialist</p>
           </div>
 
           <div className="flex space-x-4">
             <a
-              href="https://github.com/bm-ghost"
+              href={github?.url || profile?.github_url || "#"}
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-purple-400 transition-colors"
@@ -24,7 +33,7 @@ export default function Footer() {
               <Github size={20} />
             </a>
             <a
-              href="https://www.linkedin.com/in/meshack-bwire-b2390a213/"
+              href={linkedin?.url || profile?.linkedin_url || "#"}
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-purple-400 transition-colors"
@@ -33,14 +42,14 @@ export default function Footer() {
               <Linkedin size={20} />
             </a>
             <a
-              href="mailto:bmwandera14@gmail.com"
+              href={email?.url || `mailto:${profile?.email || ""}`}
               className="text-gray-400 hover:text-purple-400 transition-colors"
               aria-label="Email"
             >
               <Mail size={20} />
             </a>
             <a
-              href="tel:+254794142204"
+              href={phone?.url || `tel:${(profile?.phone || "").replace(/\s+/g, "")}`}
               className="text-gray-400 hover:text-purple-400 transition-colors"
               aria-label="Phone"
             >

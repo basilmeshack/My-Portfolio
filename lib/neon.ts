@@ -10,15 +10,32 @@ export function hasNeonDatabaseUrl(): boolean {
   return Boolean(process.env.NEON_DATABASE_URL?.trim())
 }
 
+function normalizeConnectionString(raw: string): string {
+  try {
+    const url = new URL(raw)
+    const sslMode = url.searchParams.get("sslmode")
+
+    if (!sslMode || sslMode === "require" || sslMode === "prefer" || sslMode === "verify-ca") {
+      url.searchParams.set("sslmode", "verify-full")
+    }
+
+    return url.toString()
+  } catch {
+    return raw
+  }
+}
+
 export function getNeonPool(): pg.Pool {
   const connectionString = process.env.NEON_DATABASE_URL
   if (!connectionString) {
     throw new Error("NEON_DATABASE_URL is required")
   }
 
+  const normalizedConnectionString = normalizeConnectionString(connectionString)
+
   if (!globalForNeon.neonPool) {
     globalForNeon.neonPool = new Pool({
-      connectionString,
+      connectionString: normalizedConnectionString,
       ssl: { rejectUnauthorized: false },
       max: 10,
       idleTimeoutMillis: 30000,

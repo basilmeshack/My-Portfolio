@@ -317,20 +317,26 @@ export async function getProjectsFromNeon(search?: string, profileId?: string): 
       [normalizedSearch, normalizedProfile],
     )
 
-    return result.rows.map((row) => ({
-      id: row.id ?? "",
-      created: row.created ?? "",
-      updated: row.updated ?? "",
-      title: row.title ?? "Untitled Project",
-      description: row.description ?? "No description available",
-      tools_used: row.tools_used ?? "",
-      link: row.link ?? "",
-      profile: row.profile ?? "",
-      image: row.image ?? "/placeholder.svg?height=300&width=600",
-      github: row.github ?? "",
-      demo: row.demo ?? "",
-      aiTags: Array.isArray(row.ai_tags) ? row.ai_tags.filter(Boolean) : [],
-    }))
+    return result.rows.map((row: Record<string, unknown>) => {
+      const aiTags = Array.isArray(row.ai_tags)
+        ? row.ai_tags.filter((tag): tag is string => typeof tag === "string" && tag.trim() !== "")
+        : []
+
+      return {
+        id: typeof row.id === "string" ? row.id : "",
+        created: typeof row.created === "string" ? row.created : "",
+        updated: typeof row.updated === "string" ? row.updated : "",
+        title: typeof row.title === "string" ? row.title : "Untitled Project",
+        description: typeof row.description === "string" ? row.description : "No description available",
+        tools_used: typeof row.tools_used === "string" ? row.tools_used : "",
+        link: typeof row.link === "string" ? row.link : "",
+        profile: typeof row.profile === "string" ? row.profile : "",
+        image: typeof row.image === "string" ? row.image : "/placeholder.svg?height=300&width=600",
+        github: typeof row.github === "string" ? row.github : "",
+        demo: typeof row.demo === "string" ? row.demo : "",
+        aiTags,
+      }
+    })
   })
 }
 
@@ -366,19 +372,25 @@ export async function getPortfolioItemsFromNeon(field?: string): Promise<Portfol
       [normalizedField],
     )
 
-    return result.rows.map((row) => ({
-      id: row.id ?? "",
-      name: row.name ?? "",
-      logo: row.logo ?? "/placeholder.svg?height=300&width=600",
-      url: row.url ?? "",
-      category: row.category ?? "",
-      field: row.field ?? "",
-      description: row.description ?? "",
-      tags: Array.isArray(row.tags) ? row.tags.filter(Boolean) : [],
-      demoLink: row.demo_link ?? "",
-      isCompanyProject: Boolean(row.is_company_project),
-      comingSoon: Boolean(row.coming_soon),
-    }))
+    return result.rows.map((row: Record<string, unknown>) => {
+      const tags = Array.isArray(row.tags)
+        ? row.tags.filter((tag): tag is string => typeof tag === "string" && tag.trim() !== "")
+        : []
+
+      return {
+        id: typeof row.id === "string" ? row.id : "",
+        name: typeof row.name === "string" ? row.name : "",
+        logo: typeof row.logo === "string" ? row.logo : "/placeholder.svg?height=300&width=600",
+        url: typeof row.url === "string" ? row.url : "",
+        category: typeof row.category === "string" ? row.category : "",
+        field: typeof row.field === "string" ? row.field : "",
+        description: typeof row.description === "string" ? row.description : "",
+        tags,
+        demoLink: typeof row.demo_link === "string" ? row.demo_link : "",
+        isCompanyProject: Boolean(row.is_company_project),
+        comingSoon: Boolean(row.coming_soon),
+      }
+    })
   })
 }
 

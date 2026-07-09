@@ -1,8 +1,14 @@
-export const ResponsiveContainer = ({ children }) => {
+import type { ReactNode } from "react"
+
+type ChartChildrenProps = {
+  children: ReactNode
+}
+
+export const ResponsiveContainer = ({ children }: ChartChildrenProps) => {
   return <div className="w-full h-full">{children}</div>
 }
 
-export const RadarChart = ({ children }) => {
+export const RadarChart = ({ children }: ChartChildrenProps) => {
   return <div>{children}</div>
 }
 
@@ -22,7 +28,7 @@ export const Radar = () => {
   return null
 }
 
-export const BarChart = ({ children }) => {
+export const BarChart = ({ children }: ChartChildrenProps) => {
   return <div>{children}</div>
 }
 

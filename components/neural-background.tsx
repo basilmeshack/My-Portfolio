@@ -9,7 +9,8 @@ export default function NeuralBackground() {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const ctx = canvas.getContext("2d")
+    const canvasEl = canvas
+    const ctx = canvasEl.getContext("2d")
     if (!ctx) return
 
     let animationFrameId: number
@@ -19,13 +20,13 @@ export default function NeuralBackground() {
     const mouseRadius = 120
 
     const mouse = {
-      x: canvas.width / 2,
-      y: canvas.height / 2,
+      x: canvasEl.width / 2,
+      y: canvasEl.height / 2,
       active: false,
     }
 
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+    canvasEl.width = window.innerWidth
+    canvasEl.height = window.innerHeight
 
     class Particle {
       x: number
@@ -36,8 +37,8 @@ export default function NeuralBackground() {
       color: string
 
       constructor() {
-        this.x = Math.random() * canvas.width
-        this.y = Math.random() * canvas.height
+        this.x = Math.random() * canvasEl.width
+        this.y = Math.random() * canvasEl.height
         this.vx = (Math.random() - 0.5) * 0.4
         this.vy = (Math.random() - 0.5) * 0.4
         this.size = Math.random() * 1.2 + 0.3
@@ -53,8 +54,8 @@ export default function NeuralBackground() {
         this.y += this.vy
 
         // Bounce off edges
-        if (this.x < 0 || this.x > canvas.width) this.vx *= -1
-        if (this.y < 0 || this.y > canvas.height) this.vy *= -1
+        if (this.x < 0 || this.x > canvasEl.width) this.vx *= -1
+        if (this.y < 0 || this.y > canvasEl.height) this.vy *= -1
 
         // Mouse interaction
         if (mouse.active) {
@@ -86,27 +87,30 @@ export default function NeuralBackground() {
     }
 
     // Mouse events
-    canvas.addEventListener("mousemove", (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       mouse.x = e.clientX
       mouse.y = e.clientY
       mouse.active = true
-    })
+    }
 
-    canvas.addEventListener("mouseleave", () => {
+    const handleMouseLeave = () => {
       mouse.active = false
-    })
+    }
+
+    canvasEl.addEventListener("mousemove", handleMouseMove)
+    canvasEl.addEventListener("mouseleave", handleMouseLeave)
 
     // Handle window resize
     const handleResize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      canvasEl.width = window.innerWidth
+      canvasEl.height = window.innerHeight
     }
 
     window.addEventListener("resize", handleResize)
 
     // Animation loop
     const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.clearRect(0, 0, canvasEl.width, canvasEl.height)
 
       // Update and draw particles
       particles.forEach((particle) => {
@@ -140,6 +144,8 @@ export default function NeuralBackground() {
 
     return () => {
       cancelAnimationFrame(animationFrameId)
+      canvasEl.removeEventListener("mousemove", handleMouseMove)
+      canvasEl.removeEventListener("mouseleave", handleMouseLeave)
       window.removeEventListener("resize", handleResize)
     }
   }, [])

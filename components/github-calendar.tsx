@@ -93,9 +93,9 @@ export default function GitHubCalendar() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="bg-gray-800/80 backdrop-blur-sm p-6 rounded-lg shadow-md"
+      className="bg-gray-800/80 backdrop-blur-sm p-4 rounded-lg shadow-md sm:p-5"
     >
-      <div className="mb-6 flex flex-col gap-2 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
+      <div className="mb-4 flex flex-col gap-2 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
         <div>
           <h2 className="text-2xl font-semibold text-white">
             Days I <span className="text-purple-400">Code</span>
@@ -114,21 +114,21 @@ export default function GitHubCalendar() {
       </div>
 
       {!loaded && (
-        <div className="flex h-32 items-center justify-center">
+        <div className="flex h-24 items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-purple-400 border-t-transparent"></div>
         </div>
       )}
 
       {loaded && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {error && (
             <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-300">
               Showing fallback data while GitHub is temporarily unavailable.
             </div>
           )}
 
-          <div className="rounded-lg border border-white/10 bg-slate-900/60 p-4">
-            <div className="mb-4 flex items-end justify-between gap-3">
+          <div className="rounded-lg border border-white/10 bg-slate-900/60 p-3 sm:p-4">
+            <div className="mb-3 flex items-end justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.2em] text-gray-500">Last year</p>
                 <p className="text-2xl font-semibold text-white">{totalContributions}</p>
@@ -139,7 +139,7 @@ export default function GitHubCalendar() {
               </div>
             </div>
 
-            <div className="mb-4 flex items-center gap-2 text-[11px] text-gray-500">
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] text-gray-500">
               <span className="h-3 w-3 rounded-sm bg-slate-800" /> Less
               <span className="h-3 w-3 rounded-sm bg-violet-800" />
               <span className="h-3 w-3 rounded-sm bg-violet-600" />
@@ -161,13 +161,13 @@ export default function GitHubCalendar() {
               })}
             </div>
 
-            <div className="mt-4 grid grid-cols-6 gap-2 sm:grid-cols-12">
+            <div className="mt-3 grid grid-cols-6 gap-2 sm:grid-cols-12">
               {monthlyData.map((item) => {
                 const heightPercent = Math.max(12, Math.round((item.count / maxCount) * 100))
 
                 return (
                   <div key={item.month} className="flex flex-col items-center gap-2">
-                    <div className="flex h-28 w-full items-end justify-center rounded-md bg-slate-800/70 p-1">
+                    <div className="flex h-20 w-full items-end justify-center rounded-md bg-slate-800/70 p-1">
                       <div
                         className={`w-full rounded-sm ${getColor(item.count)}`}
                         style={{ height: `${heightPercent}%` }}

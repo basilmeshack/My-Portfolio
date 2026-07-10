@@ -1,6 +1,14 @@
 import { ExternalLink } from "lucide-react"
 import { getPublicProfilePresentation } from "@/lib/profile-public"
 
+// Strips stray HTML tags (e.g. leftover <p>, </p>) that sometimes end up
+// saved directly inside text fields from the CMS/editor, so they render as
+// plain text instead of leaking into the page as literal "<p>" strings.
+function stripHtmlTags(value?: string | null): string {
+  if (!value) return ""
+  return value.replace(/<\/?[a-z][^>]*>/gi, "").trim()
+}
+
 export default async function AboutCard() {
   const presentation = await getPublicProfilePresentation()
 
@@ -11,20 +19,27 @@ export default async function AboutCard() {
   const githubChannel = profile?.contact_channels?.find((channel) => channel.channel_type === "github")
   const githubUrl = githubChannel?.url || profile?.github_url || ""
 
+  const aboutIntro = stripHtmlTags(
+    editable?.aboutIntro || `My name is ${profile?.full_name || "Meshack Bwire"} from ${profile?.location || "Nairobi, Kenya"}.`
+  )
+  const aboutCurrentRole = stripHtmlTags(editable?.aboutCurrentRole)
+  const aboutHighlights = (editable?.aboutHighlights || []).map(stripHtmlTags)
+  const aboutPreviousRole = stripHtmlTags(editable?.aboutPreviousRole)
+  const quote = stripHtmlTags(editable?.quote) || "Strive to build things that make a difference!"
+  const quoteAuthor = stripHtmlTags(editable?.quoteAuthor) || "Bwire"
+
   return (
     <div className="bg-gray-800/80 backdrop-blur-sm p-6 rounded-lg shadow-md">
       <div className="prose prose-invert max-w-none">
-        <p className="text-lg text-white">
-          {editable?.aboutIntro || `My name is ${profile?.full_name || "Meshack Bwire"} from ${profile?.location || "Nairobi, Kenya"}.`}
-        </p>
+        <p className="text-lg text-white">{aboutIntro}</p>
 
-        {editable?.aboutCurrentRole ? <p className="text-gray-300">{editable.aboutCurrentRole}</p> : null}
+        {aboutCurrentRole ? <p className="text-gray-300">{aboutCurrentRole}</p> : null}
 
-        {editable?.aboutHighlights?.map((highlight, index) => (
+        {aboutHighlights.map((highlight, index) => (
           <p key={index} className="text-gray-300">{highlight}</p>
         ))}
 
-        {editable?.aboutPreviousRole ? <p className="text-gray-300">{editable.aboutPreviousRole}</p> : null}
+        {aboutPreviousRole ? <p className="text-gray-300">{aboutPreviousRole}</p> : null}
 
         <div className="flex flex-wrap gap-4 text-sm text-zinc-300">
           {linkedInUrl ? (
@@ -59,8 +74,8 @@ export default async function AboutCard() {
         </ul>
 
         <blockquote className="border-l-4 border-purple-400 pl-4 italic mt-6">
-          <p className="text-purple-400">"{editable?.quote || "Strive to build things that make a difference!"}"</p>
-          <footer className="text-gray-400">- {editable?.quoteAuthor || "Bwire"}</footer>
+          <p className="text-purple-400">"{quote}"</p>
+          <footer className="text-gray-400">- {quoteAuthor}</footer>
         </blockquote>
       </div>
     </div>

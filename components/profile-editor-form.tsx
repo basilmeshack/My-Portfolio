@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import RichTextEditor from "@/components/rich-text-editor"
+import { SaveFeedbackIndicator, useSaveFeedback } from "@/components/save-feedback"
 
 type ContactChannel = {
   channelType: "email" | "phone" | "linkedin" | "github" | "meeting"
@@ -61,7 +62,12 @@ type ExperienceData = {
   id: number | null
   roleTitle: string
   organization: string
-  periodLabel: string
+  startMonth: number | null
+  startYear: number | null
+  endMonth: number | null
+  endYear: number | null
+  projectId: number | null
+  projectIds: number[]
   responsibilitiesHtml: string
   achievementsHtml: string
   displayOrder: number
@@ -131,6 +137,8 @@ export default function ProfileEditorForm() {
   const [aboutHighlightsText, setAboutHighlightsText] = useState("")
   const [interestsText, setInterestsText] = useState("")
   const [activeTab, setActiveTab] = useState<"profile" | "projects" | "portfolio" | "experience">("profile")
+  const [projectSelection, setProjectSelection] = useState<Record<string, string>>({})
+  const { feedback, showSaving, showSuccess, showError, dismiss } = useSaveFeedback()
   const queryClient = useQueryClient()
 
   const projectOptions = useMemo(
@@ -169,11 +177,26 @@ export default function ProfileEditorForm() {
       tags: item.tags || [],
     }))
 
+    const normalizedExperiences = (data.experiences || []).map((experience) => {
+      const normalizedProjectIds = Array.isArray(experience.projectIds)
+        ? experience.projectIds.filter((id): id is number => typeof id === "number" && Number.isFinite(id))
+        : []
+
+      const legacyProjectId = typeof experience.projectId === "number" && Number.isFinite(experience.projectId) ? experience.projectId : null
+      const nextProjectIds = normalizedProjectIds.length > 0 ? normalizedProjectIds : legacyProjectId ? [legacyProjectId] : []
+
+      return {
+        ...experience,
+        projectId: nextProjectIds[0] ?? legacyProjectId ?? null,
+        projectIds: nextProjectIds,
+      }
+    })
+
     setCmsData({
       profile: data.profile,
       projects: normalizedProjects,
       portfolioItems: normalizedPortfolio,
-      experiences: data.experiences || [],
+      experiences: normalizedExperiences,
     })
 
     setAboutHighlightsText((data.profile.aboutHighlights || []).join("\n"))
@@ -221,6 +244,11 @@ export default function ProfileEditorForm() {
         ...current.projects,
       ],
     }))
+  }
+
+  const addProjectAndOpenProjects = () => {
+    addProject()
+    setActiveTab("projects")
   }
 
   const updateProject = (clientKey: string, patch: Partial<ProjectData>) => {
@@ -293,7 +321,12 @@ export default function ProfileEditorForm() {
           id: null,
           roleTitle: "",
           organization: "",
-          periodLabel: "",
+          startMonth: null,
+          startYear: null,
+          endMonth: null,
+          endYear: null,
+          projectId: null,
+          projectIds: [],
           responsibilitiesHtml: "",
           achievementsHtml: "",
           displayOrder: nextOrder,
@@ -365,6 +398,7 @@ export default function ProfileEditorForm() {
     event.preventDefault()
     setError("")
     setMessage("")
+    showSaving("Updating profile...")
 
     const payload: CmsData & { newPassword?: string } = {
       profile: {
@@ -378,33 +412,44 @@ export default function ProfileEditorForm() {
       newPassword: newPassword.trim() || undefined,
     }
 
-    const response = await fetch("/api/profile/editbwire", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    })
+    try {
+      const response = await fetch("/api/profile/editbwire", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
 
-    const result = await response.json().catch(() => ({}))
-    if (!response.ok) {
-      setError(result.error || "Failed to save")
-      return
+      const result = await response.json().catch(() => ({}))
+      
+      if (!response.ok) {
+        const errorMsg = result.error || "Failed to save changes"
+        setError(errorMsg)
+        showError("Save failed", errorMsg)
+        return
+      }
+
+      if (!result?.data) {
+        setError("Save succeeded but failed to reload data")
+        showError("Reload failed", "Data was saved but couldn't reload")
+        return
+      }
+
+      await queryClient.invalidateQueries({
+        predicate: (query) => {
+          const key = query.queryKey[0]
+          return key === "profile" || key === "portfolio-items"
+        },
+      })
+
+      hydrateCmsData(result.data)
+      setNewPassword("")
+      showSuccess("All changes saved to Neon!")
+      setMessage("✓ All updated fields were written to Neon successfully.")
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "Network error"
+      setError(errorMsg)
+      showError("Error saving", errorMsg)
     }
-
-    if (!result?.data) {
-      setError("Save succeeded but failed to reload data")
-      return
-    }
-
-    await queryClient.invalidateQueries({
-      predicate: (query) => {
-        const key = query.queryKey[0]
-        return key === "profile" || key === "portfolio-items"
-      },
-    })
-
-    hydrateCmsData(result.data)
-    setNewPassword("")
-    setMessage("Saved. All updated fields were written to Neon successfully.")
   }
 
   if (!isAuthenticated) {
@@ -794,7 +839,7 @@ export default function ProfileEditorForm() {
                 </button>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-sm text-zinc-300">Role Title</label>
                   <input title="Editor input" value={experience.roleTitle} onChange={(event) => updateExperience(index, { roleTitle: event.target.value })} className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white" />
@@ -803,11 +848,166 @@ export default function ProfileEditorForm() {
                   <label className="mb-2 block text-sm text-zinc-300">Organization</label>
                   <input title="Editor input" value={experience.organization} onChange={(event) => updateExperience(index, { organization: event.target.value })} className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white" />
                 </div>
-                <div>
-                  <label className="mb-2 block text-sm text-zinc-300">Period</label>
-                  <input title="Editor input" value={experience.periodLabel} onChange={(event) => updateExperience(index, { periodLabel: event.target.value })} className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white" />
+              </div>
+
+              <div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <label className="mb-2 block text-sm text-zinc-300">Related Projects</label>
+                  <button
+                    type="button"
+                    onClick={addProjectAndOpenProjects}
+                    className="inline-flex items-center rounded-lg border border-violet-500/40 bg-violet-600/10 px-3 py-2 text-sm text-violet-200 hover:bg-violet-600/15"
+                  >
+                    Add new project
+                  </button>
+                </div>
+
+                <div className="space-y-3 rounded-lg border border-zinc-800 bg-zinc-950/60 p-3">
+                  {cmsData.projects.length === 0 ? (
+                    <p className="text-sm text-zinc-500">Add projects first to link them to this experience.</p>
+                  ) : (
+                    <>
+                      <select
+                        title="Select related project"
+                        value={projectSelection[`experience-${experience.id ?? "new"}-${index}`] || ""}
+                        onChange={(event) => {
+                          const selectedKey = event.target.value
+                          if (!selectedKey) {
+                            return
+                          }
+
+                          const project = cmsData.projects.find((p) => p.clientKey === selectedKey)
+                          if (!project?.id) {
+                            return
+                          }
+
+                          const nextProjectIds = [...new Set([...(experience.projectIds || []), project.id])]
+                          updateExperience(index, {
+                            projectIds: nextProjectIds,
+                            projectId: nextProjectIds[0] ?? null,
+                          })
+
+                          setProjectSelection((current) => ({
+                            ...current,
+                            [`experience-${experience.id ?? "new"}-${index}`]: "",
+                          }))
+                        }}
+                        className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white text-sm"
+                      >
+                        <option value="">Choose a project to link</option>
+                        {cmsData.projects
+                          .filter((project) => project.id != null && !(experience.projectIds || []).includes(project.id))
+                          .map((project) => (
+                            <option key={project.clientKey} value={project.clientKey}>
+                              {project.title || "Untitled project"}
+                            </option>
+                          ))}
+                      </select>
+
+                      {experience.projectIds && experience.projectIds.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {experience.projectIds.map((projectId) => {
+                            const project = cmsData.projects.find((project) => project.id === projectId)
+                            if (!project) return null
+                            return (
+                              <button
+                                key={`selected-project-${project.clientKey}`}
+                                type="button"
+                                onClick={() => {
+                                  const nextProjectIds = (experience.projectIds || []).filter((id) => id !== projectId)
+                                  updateExperience(index, {
+                                    projectIds: nextProjectIds,
+                                    projectId: nextProjectIds[0] ?? null,
+                                  })
+                                }}
+                                className="inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900/90 px-3 py-2 text-sm text-zinc-100 transition hover:bg-zinc-800"
+                              >
+                                <span>{project.title || "Untitled project"}</span>
+                                <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-zinc-300">Remove</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-zinc-500">No related projects selected yet.</p>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
+
+              <div className="grid gap-4 md:grid-cols-5">
+                <div>
+                  <label className="mb-2 block text-sm text-zinc-300">Start Month</label>
+                  <select
+                    value={experience.startMonth || ""}
+                    onChange={(event) => updateExperience(index, { startMonth: event.target.value ? Number(event.target.value) : null })}
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white text-sm"
+                  >
+                    <option value="">Select Month</option>
+                    {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(
+                      (month, i) => (
+                        <option key={month} value={i + 1}>
+                          {month}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm text-zinc-300">Start Year</label>
+                  <input
+                    type="number"
+                    value={experience.startYear || ""}
+                    onChange={(event) => updateExperience(index, { startYear: event.target.value ? Number(event.target.value) : null })}
+                    placeholder="2024"
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white text-sm"
+                  />
+                </div>
+                <div className="flex items-end justify-center pb-3">
+                  <span className="text-sm text-zinc-500">to</span>
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm text-zinc-300">End Month</label>
+                  <select
+                    value={experience.endMonth || ""}
+                    onChange={(event) => updateExperience(index, { endMonth: event.target.value ? Number(event.target.value) : null })}
+                    disabled={experience.endYear === null && experience.endMonth === null}
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white text-sm disabled:opacity-50"
+                  >
+                    <option value="">Select Month</option>
+                    {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"].map(
+                      (month, i) => (
+                        <option key={month} value={i + 1}>
+                          {month}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm text-zinc-300">End Year</label>
+                  <input
+                    type="number"
+                    value={experience.endYear || ""}
+                    onChange={(event) => updateExperience(index, { endYear: event.target.value ? Number(event.target.value) : null })}
+                    placeholder="Leave blank if current"
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-4 py-3 text-white text-sm placeholder:text-zinc-600"
+                  />
+                </div>
+              </div>
+
+              {experience.startYear && experience.startMonth ? (
+                <p className="text-sm text-zinc-400">
+                  Displays as: <strong>
+                    {["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][
+                      experience.startMonth - 1
+                    ]}{" "}
+                    {experience.startYear}
+                    {experience.endYear ? ` - ${experience.endMonth ? ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][experience.endMonth - 1] + " " : ""}${experience.endYear}` : " - Present"}
+                  </strong>
+                </p>
+              ) : null}
 
               <RichTextEditor label="Responsibilities" value={experience.responsibilitiesHtml} onChange={(value) => updateExperience(index, { responsibilitiesHtml: value })} />
               <RichTextEditor label="Achievements" value={experience.achievementsHtml} onChange={(value) => updateExperience(index, { achievementsHtml: value })} />
@@ -821,11 +1021,13 @@ export default function ProfileEditorForm() {
 
       <button
         type="submit"
-        disabled={isPending}
-        className="rounded-lg bg-violet-600 px-6 py-3 font-medium text-white hover:bg-violet-500 disabled:opacity-60"
+        disabled={isPending || feedback.state === "saving"}
+        className="rounded-lg bg-violet-600 px-6 py-3 font-medium text-white hover:bg-violet-500 disabled:opacity-60 disabled:cursor-not-allowed transition"
       >
-        Save All To Neon
+        {feedback.state === "saving" ? "Saving..." : "Save All To Neon"}
       </button>
+
+      <SaveFeedbackIndicator feedback={feedback} onDismiss={dismiss} />
     </form>
   )
 }

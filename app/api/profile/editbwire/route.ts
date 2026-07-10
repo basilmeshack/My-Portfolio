@@ -5,6 +5,7 @@ import {
   getEditableCmsData,
   isProfileEditorAuthenticated,
   updateEditableCmsData,
+  type EditableCmsData,
 } from "@/lib/profile-editor-service"
 
 export const runtime = "nodejs"
@@ -48,68 +49,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const body = (await request.json().catch(() => null)) as
-    | ({
-        profile: {
-          fullName: string
-          location: string
-          summary: string
-          professionalBlurb: string
-          aboutIntro: string
-          aboutCurrentRole: string
-          aboutHighlights: string[]
-          aboutPreviousRole: string
-          interests: string[]
-          quote: string
-          quoteAuthor: string
-          contactChannels: Array<{
-            channelType: "email" | "phone" | "linkedin" | "github" | "meeting"
-            label: string
-            handle: string
-            value: string
-            url: string
-            displayOrder: number
-          }>
-        }
-        projects: Array<{
-          id: number | null
-          clientKey: string
-          title: string
-          description: string
-          link: string
-          github: string
-          demo: string
-          imageUrl: string
-          tools: string[]
-          tags: string[]
-        }>
-        portfolioItems: Array<{
-          id: number | null
-          clientKey: string
-          projectClientKey: string | null
-          fieldType: string
-          category: string
-          name: string
-          description: string
-          url: string
-          demoLink: string
-          imageUrl: string
-          isCompanyProject: boolean
-          comingSoon: boolean
-          tags: string[]
-        }>
-        experiences: Array<{
-          id: number | null
-          roleTitle: string
-          organization: string
-          periodLabel: string
-          responsibilitiesHtml: string
-          achievementsHtml: string
-          displayOrder: number
-        }>
-        newPassword?: string
-      })
-    | null
+  const body = (await request.json().catch(() => null)) as EditableCmsData & { newPassword?: string } | null
 
   if (!body) {
     return NextResponse.json({ error: "Invalid payload" }, { status: 400 })

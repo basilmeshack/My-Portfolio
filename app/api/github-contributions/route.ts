@@ -8,11 +8,17 @@ export async function GET(request: Request) {
   const username = searchParams.get("username")?.trim() || "BM-Ghost"
 
   try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 7000)
+
     const response = await fetch(`https://github-contributions-api.jogruber.de/v4/${encodeURIComponent(username)}?y=last`, {
       headers: {
         Accept: "application/json",
       },
+      signal: controller.signal,
     })
+
+    clearTimeout(timeout)
 
     if (!response.ok) {
       throw new Error(`GitHub contributions API returned ${response.status}`)

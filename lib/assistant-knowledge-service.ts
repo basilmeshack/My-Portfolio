@@ -168,6 +168,15 @@ export async function getAssistantKnowledgeContext(query: string): Promise<strin
     .map(([field, count]) => `${field}: ${count}`)
     .join(", ")
 
+  const experienceLines = ownerContext.experienceHighlights.length > 0
+    ? ownerContext.experienceHighlights
+        .map((experience) => {
+          const relatedProjects = experience.relatedProjects.length > 0 ? experience.relatedProjects.join(", ") : "No linked projects"
+          return `${experience.roleTitle} @ ${experience.organization} -> ${relatedProjects}`
+        })
+        .join("\n")
+    : "No experience highlights available."
+
   const knowledgeLines = relevantDocuments
     .map((document, index) => {
       const keywords = document.keywords.length > 0 ? document.keywords.join(", ") : "N/A"
@@ -199,6 +208,7 @@ export async function getAssistantKnowledgeContext(query: string): Promise<strin
     `GitHub: ${ownerContext.github || "N/A"}`,
     `Contact Channels: ${ownerContext.contactChannels.length > 0 ? ownerContext.contactChannels.map((channel) => `${channel.label}: ${channel.url || channel.value}`).join(" | ") : "N/A"}`,
     `Portfolio sections (counts): ${fieldLines || "N/A"}`,
+    `Experience highlights: ${experienceLines}`,
     "Retrieved knowledge documents:",
     knowledgeLines || "No matching knowledge documents were found.",
   ].join("\n")

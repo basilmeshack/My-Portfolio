@@ -4,6 +4,7 @@ import { randomUUID } from "crypto"
 import { cookies } from "next/headers"
 import { hashEditorPassword, verifyEditorPassword } from "@/lib/profile-editor-auth"
 import { getNeonPool } from "@/lib/neon"
+import { sanitizeRichTextContent } from "@/lib/html-sanitizer"
 import {
   getProfileContactChannelsFromNeon,
   getProfileFromNeon,
@@ -72,7 +73,12 @@ export interface EditableExperienceData {
   id: number | null
   roleTitle: string
   organization: string
-  periodLabel: string
+  startMonth: number | null
+  startYear: number | null
+  endMonth: number | null
+  endYear: number | null
+  projectId: number | null
+  projectIds: number[]
   responsibilitiesHtml: string
   achievementsHtml: string
   displayOrder: number
@@ -94,12 +100,48 @@ type RawProfileRow = {
   edit_password_hash: string | null
 }
 
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+]
+
+export function formatPeriodLabel(
+  startMonth: number | null,
+  startYear: number | null,
+  endMonth: number | null,
+  endYear: number | null,
+): string {
+  if (!startYear) return "No date"
+
+  let label = ""
+
+  if (startMonth && startMonth >= 1 && startMonth <= 12) {
+    label = MONTH_NAMES[startMonth - 1]
+  }
+  label += ` ${startYear}`
+
+  if (endYear === null && endMonth === null) {
+    // Currently working
+    label += " - Present"
+  } else if (endYear) {
+    label += " - "
+    if (endMonth && endMonth >= 1 && endMonth <= 12) {
+      label += MONTH_NAMES[endMonth - 1] + " "
+    }
+    label += endYear
+  }
+
+  return label
+}
+
 function normalizeString(value: unknown): string {
   return typeof value === "string" ? value.trim() : ""
 }
 
 function normalizeRichText(value: unknown): string {
-  return typeof value === "string" ? value.trim() : ""
+  if (typeof value !== "string") return ""
+  // Sanitize HTML to remove Word markup and normalize content
+  return sanitizeRichTextContent(value)
 }
 
 function normalizeStringArray(value: unknown): string[] {
@@ -209,53 +251,85 @@ async function getExperiencesForEditor(profileId: number): Promise<EditableExper
   const result = await pool.query(
     `
       SELECT
-        id,
-        COALESCE(role_title, '') AS role_title,
-        COALESCE(organization, '') AS organization,
-        COALESCE(period_label, '') AS period_label,
-        COALESCE(responsibilities_html, '') AS responsibilities_html,
-        COALESCE(achievements_html, '') AS achievements_html,
-        COALESCE(display_order, 100) AS display_order
-      FROM profile_experiences
-      WHERE profile_id = $1
-      ORDER BY display_order ASC, id ASC
+        pe.id,
+        COALESCE(pe.role_title, '') AS role_title,
+        COALESCE(pe.organization, '') AS organization,
+        pe.start_month,
+        pe.start_year,
+        pe.end_month,
+        pe.end_year,
+        pe.project_id,
+        COALESCE(
+          (
+            SELECT array_agg(pep.project_id ORDER BY pep.display_order, pep.project_id)
+            FROM profile_experience_projects pep
+            WHERE pep.experience_id = pe.id
+          ),
+          ARRAY[]::bigint[]
+        ) AS project_ids,
+        COALESCE(pe.responsibilities_html, '') AS responsibilities_html,
+        COALESCE(pe.achievements_html, '') AS achievements_html,
+        COALESCE(pe.display_order, 100) AS display_order
+      FROM profile_experiences pe
+      WHERE pe.profile_id = $1
+      ORDER BY COALESCE(pe.start_year, 9999) DESC, COALESCE(pe.start_month, 12) DESC, pe.display_order ASC, pe.id ASC
     `,
     [profileId],
   )
 
-  return result.rows.map((row: any) => ({
-    id: Number(row.id),
-    roleTitle: row.role_title,
-    organization: row.organization,
-    periodLabel: row.period_label,
-    responsibilitiesHtml: row.responsibilities_html,
-    achievementsHtml: row.achievements_html,
-    displayOrder: Number(row.display_order),
-  }))
+  return result.rows.map((row: any) => {
+    const legacyProjectId = row.project_id ? Number(row.project_id) : null
+    const normalizedProjectIds = Array.isArray(row.project_ids)
+      ? row.project_ids.filter((id: unknown): id is number => typeof id === "number" && Number.isFinite(id))
+      : []
+
+    return {
+      id: Number(row.id),
+      roleTitle: row.role_title,
+      organization: row.organization,
+      startMonth: row.start_month ? Number(row.start_month) : null,
+      startYear: row.start_year ? Number(row.start_year) : null,
+      endMonth: row.end_month ? Number(row.end_month) : null,
+      endYear: row.end_year ? Number(row.end_year) : null,
+      projectId: normalizedProjectIds[0] ?? legacyProjectId ?? null,
+      projectIds: normalizedProjectIds.length > 0 ? normalizedProjectIds : legacyProjectId ? [legacyProjectId] : [],
+      responsibilitiesHtml: row.responsibilities_html,
+      achievementsHtml: row.achievements_html,
+      displayOrder: Number(row.display_order),
+    }
+  })
 }
 
 async function getProfileEditorRow(): Promise<RawProfileRow | null> {
-  const pool = getNeonPool()
-  const result = await pool.query(
-    `
-      SELECT
-        id,
-        full_name,
-        location,
-        summary,
-        COALESCE(about_payload, '{}'::jsonb) AS about_payload,
-        edit_password_hash
-      FROM profiles
-      ORDER BY COALESCE(updated_at, created_at, inserted_at) DESC, id DESC
-      LIMIT 1
-    `,
-  )
+  try {
+    const pool = getNeonPool()
+    const result = await Promise.race([
+      pool.query(
+        `
+          SELECT
+            id,
+            full_name,
+            location,
+            summary,
+            COALESCE(about_payload, '{}'::jsonb) AS about_payload,
+            edit_password_hash
+          FROM profiles
+          ORDER BY COALESCE(updated_at, created_at, inserted_at) DESC, id DESC
+          LIMIT 1
+        `,
+      ),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("profile-editor-db-timeout")), 8000)),
+    ])
 
-  if (result.rows.length === 0) {
+    if (result.rows.length === 0) {
+      return null
+    }
+
+    return result.rows[0] as RawProfileRow
+  } catch (error) {
+    console.error("[profile-editor-service] failed to load profile row", error)
     return null
   }
-
-  return result.rows[0] as RawProfileRow
 }
 
 export async function isProfileEditorAuthenticated(): Promise<boolean> {
@@ -785,14 +859,25 @@ export async function updateEditableCmsData(input: EditableCmsData & { newPasswo
         continue
       }
 
+      const normalizedProjectIds = Array.isArray(experience.projectIds)
+        ? experience.projectIds.filter((id): id is number => typeof id === "number" && Number.isFinite(id))
+        : []
+      const primaryProjectId = normalizedProjectIds[0] ?? experience.projectId ?? null
+
       const values = [
         roleTitle,
         experience.organization.trim(),
-        experience.periodLabel.trim(),
+        experience.startMonth || null,
+        experience.startYear || null,
+        experience.endMonth || null,
+        experience.endYear || null,
+        primaryProjectId,
         normalizeRichText(experience.responsibilitiesHtml),
         normalizeRichText(experience.achievementsHtml),
         Number(experience.displayOrder) || 100,
       ]
+
+      let experienceId: number
 
       if (experience.id && Number.isFinite(experience.id)) {
         await pool.query(
@@ -801,33 +886,55 @@ export async function updateEditableCmsData(input: EditableCmsData & { newPasswo
             SET
               role_title = $2,
               organization = $3,
-              period_label = $4,
-              responsibilities_html = $5,
-              achievements_html = $6,
-              display_order = $7,
+              start_month = $4,
+              start_year = $5,
+              end_month = $6,
+              end_year = $7,
+              project_id = $8,
+              responsibilities_html = $9,
+              achievements_html = $10,
+              display_order = $11,
               modified_at = NOW()
-            WHERE id = $1 AND profile_id = $8
+            WHERE id = $1 AND profile_id = $12
           `,
           [experience.id, ...values, profile.id],
         )
+        experienceId = experience.id
       } else {
-        await pool.query(
+        const insertResult = await pool.query(
           `
             INSERT INTO profile_experiences (
               profile_id,
               role_title,
               organization,
-              period_label,
+              start_month,
+              start_year,
+              end_month,
+              end_year,
+              project_id,
               responsibilities_html,
               achievements_html,
               display_order,
               inserted_at,
               modified_at
             ) VALUES (
-              $1,$2,$3,$4,$5,$6,$7,NOW(),NOW()
-            )
+              $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NOW(),NOW()
+            ) RETURNING id
           `,
           [profile.id, ...values],
+        )
+        experienceId = Number(insertResult.rows[0].id)
+      }
+
+      await pool.query("DELETE FROM profile_experience_projects WHERE experience_id = $1", [experienceId])
+      for (const [index, projectId] of normalizedProjectIds.entries()) {
+        await pool.query(
+          `
+            INSERT INTO profile_experience_projects (experience_id, project_id, display_order, inserted_at, modified_at)
+            VALUES ($1, $2, $3, NOW(), NOW())
+            ON CONFLICT (experience_id, project_id) DO NOTHING
+          `,
+          [experienceId, projectId, index + 1],
         )
       }
     }

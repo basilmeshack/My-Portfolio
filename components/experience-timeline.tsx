@@ -1,5 +1,5 @@
 import { Briefcase, Calendar } from "lucide-react"
-import { getPublicExperienceEntries } from "@/lib/profile-editor-service"
+import { getPublicExperienceEntries, formatPeriodLabel } from "@/lib/profile-editor-service"
 
 export default async function ExperienceTimeline() {
   const experiences = await getPublicExperienceEntries()
@@ -20,7 +20,7 @@ export default async function ExperienceTimeline() {
                 <h3 className="text-xl font-semibold text-purple-400">{exp.roleTitle}</h3>
                 <div className="flex items-center text-gray-400 text-sm">
                   <Calendar className="h-4 w-4 mr-1" />
-                  {exp.periodLabel}
+                  {formatPeriodLabel(exp.startMonth, exp.startYear, exp.endMonth, exp.endYear)}
                 </div>
               </div>
 

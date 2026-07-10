@@ -37,9 +37,11 @@ export function getNeonPool(): pg.Pool {
     globalForNeon.neonPool = new Pool({
       connectionString: normalizedConnectionString,
       ssl: { rejectUnauthorized: false },
-      max: 10,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 10000,
+      max: 5,
+      idleTimeoutMillis: 60000,
+      connectionTimeoutMillis: 15000,
+      keepAlive: true,
+      statement_timeout: 10000,
     })
   }
 

@@ -7,6 +7,10 @@ import Footer from "@/components/footer"
 import NeuralBackground from "@/components/neural-background"
 import AIAssistant from "@/components/ai-assistant"
 import { QueryProvider } from "@/components/query-provider"
+import ContentRefreshListener from "@/components/content-refresh-listener"
+
+export const dynamic = "force-dynamic"
+export const revalidate = 0
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -26,6 +30,7 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.className} text-gray-100`}>
         <QueryProvider>
+          <ContentRefreshListener />
           <NeuralBackground />
           <Header />
           {children}

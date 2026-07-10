@@ -52,7 +52,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
       try {
         setIsLoading(true)
 
-        const response = await fetch("/api/profile", { cache: "force-cache" })
+        const response = await fetch("/api/profile", { cache: "no-store" })
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`)
         }

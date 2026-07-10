@@ -2,51 +2,37 @@ import "server-only"
 import { createHash } from "crypto"
 import { getNeonPool } from "@/lib/neon"
 
-type CacheEntry<T> = {
-  expiresAt: number
-  value: T
-}
-
-const localCache = new Map<string, CacheEntry<unknown>>()
-const inFlight = new Map<string, Promise<unknown>>()
-
 export function invalidatePortfolioCache(keyPrefix?: string) {
-  if (!keyPrefix) {
-    localCache.clear()
-    return
-  }
-
-  for (const key of localCache.keys()) {
-    if (key.startsWith(keyPrefix)) {
-      localCache.delete(key)
-    }
-  }
+  // Public portfolio content is deliberately not kept in process memory. A
+  // deployment can have more than one Node instance, and clearing a Map in
+  // the instance that handled an edit does not clear the others. Keep this
+  // function as the mutation boundary for callers, but make reads live.
+  void keyPrefix
 }
 
 async function withCache<T>(cacheKey: string, ttlMs: number, loader: () => Promise<T>): Promise<T> {
-  const now = Date.now()
-  const cached = localCache.get(cacheKey) as CacheEntry<T> | undefined
+  // See invalidatePortfolioCache: process-local TTLs made freshly saved Neon
+  // data appear stale on requests handled by another instance.
+  void cacheKey
+  void ttlMs
+  return loader()
+}
 
-  if (cached && cached.expiresAt > now) {
-    return cached.value
-  }
+/**
+ * A shared revision for CMS saves. Every edit updates the profile row, so its
+ * modified_at value is a database-backed signal that works across browsers and
+ * deployment instances without relying on process memory.
+ */
+export async function getPortfolioContentVersion(): Promise<string> {
+  return withNeonFallback("getPortfolioContentVersion", "0", async () => {
+    const pool = getNeonPool()
+    const result = await pool.query(`
+      SELECT COALESCE(MAX(modified_at)::text, '0') AS version
+      FROM profiles
+    `)
 
-  const pending = inFlight.get(cacheKey) as Promise<T> | undefined
-  if (pending) {
-    return pending
-  }
-
-  const next = loader()
-    .then((value) => {
-      localCache.set(cacheKey, { value, expiresAt: Date.now() + ttlMs })
-      return value
-    })
-    .finally(() => {
-      inFlight.delete(cacheKey)
-    })
-
-  inFlight.set(cacheKey, next)
-  return next
+    return String(result.rows[0]?.version || "0")
+  })
 }
 
 async function withNeonFallback<T>(operationName: string, fallbackValue: T, loader: () => Promise<T>): Promise<T> {

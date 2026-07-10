@@ -12,7 +12,7 @@ export async function GET() {
         { profile: null, fallback: true },
         {
           headers: {
-            "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+            "Cache-Control": "no-store, max-age=0",
           },
         },
       )
@@ -31,7 +31,7 @@ export async function GET() {
       { profile: normalizedProfile },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+          "Cache-Control": "no-store, max-age=0",
         },
       },
     )

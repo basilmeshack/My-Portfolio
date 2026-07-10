@@ -7,6 +7,7 @@ import {
   updateEditableCmsData,
   type EditableCmsData,
 } from "@/lib/profile-editor-service"
+import { getPortfolioContentVersion } from "@/lib/portfolio-repository"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -57,5 +58,9 @@ export async function PUT(request: NextRequest) {
 
   await updateEditableCmsData(body)
   const data = await getEditableCmsData()
-  return NextResponse.json({ ok: true, data })
+  const contentVersion = await getPortfolioContentVersion()
+  return NextResponse.json(
+    { ok: true, data, contentVersion },
+    { headers: { "Cache-Control": "no-store, max-age=0" } },
+  )
 }

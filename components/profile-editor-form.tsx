@@ -441,6 +441,12 @@ export default function ProfileEditorForm() {
         },
       })
 
+      window.dispatchEvent(
+        new CustomEvent("portfolio-content-updated", {
+          detail: { version: typeof result.contentVersion === "string" ? result.contentVersion : undefined },
+        }),
+      )
+
       hydrateCmsData(result.data)
       setNewPassword("")
       showSuccess("All changes saved to Neon!")

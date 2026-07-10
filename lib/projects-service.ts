@@ -66,7 +66,7 @@ export const fallbackProjectsData: Project[] = [
 // Function to get all projects
 export async function getAllProjects(): Promise<Project[]> {
   try {
-    const response = await fetch("/api/projects", { cache: "force-cache" })
+    const response = await fetch("/api/projects", { cache: "no-store" })
     if (!response.ok) {
       throw new Error(`Request failed with status ${response.status}`)
     }
@@ -89,7 +89,7 @@ export async function getAllProjects(): Promise<Project[]> {
 // Function to search projects
 export async function searchProjects(query: string): Promise<Project[]> {
   try {
-    const response = await fetch(`/api/projects?search=${encodeURIComponent(query)}`, { cache: "force-cache" })
+    const response = await fetch(`/api/projects?search=${encodeURIComponent(query)}`, { cache: "no-store" })
     if (!response.ok) {
       throw new Error(`Request failed with status ${response.status}`)
     }
@@ -139,7 +139,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
 // Function to get projects by profile ID
 export async function getProjectsByProfile(profileId: string): Promise<Project[]> {
   try {
-    const response = await fetch(`/api/projects?profileId=${encodeURIComponent(profileId)}`, { cache: "force-cache" })
+    const response = await fetch(`/api/projects?profileId=${encodeURIComponent(profileId)}`, { cache: "no-store" })
     if (!response.ok) {
       throw new Error(`Request failed with status ${response.status}`)
     }

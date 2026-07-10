@@ -4,7 +4,7 @@ import { hasNeonDatabaseUrl } from "@/lib/neon"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-export const revalidate = 300
+export const revalidate = 0
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
         { items: [], fallback: true },
         {
           headers: {
-            "Cache-Control": "public, s-maxage=60, stale-while-revalidate=120",
+            "Cache-Control": "no-store, max-age=0",
           },
         },
       )
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       { items },
       {
         headers: {
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+          "Cache-Control": "no-store, max-age=0",
         },
       },
     )

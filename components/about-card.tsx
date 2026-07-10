@@ -20,20 +20,25 @@ export default async function AboutCard() {
 
   return (
     <section className="overflow-hidden rounded-2xl border border-white/10 bg-slate-900/70 shadow-xl shadow-black/20 backdrop-blur-sm">
-      <div className="border-b border-white/10 bg-gradient-to-r from-violet-600/20 via-slate-900/30 to-transparent px-6 py-5 sm:px-8">
-        <p className="text-sm font-medium uppercase tracking-[0.2em] text-violet-300">A little more about me</p>
-        <p className="mt-2 text-lg leading-8 text-white sm:text-xl">{aboutIntro}</p>
+      {/* Hero header */}
+      <div className="relative border-b border-white/10 bg-gradient-to-br from-violet-600/25 via-slate-900/40 to-slate-900/10 px-6 py-8 sm:px-8 sm:py-10">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-violet-500/10 blur-3xl" />
+        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-violet-300">A little more about me</p>
+        <p className="mt-3 max-w-2xl text-xl leading-8 text-white sm:text-2xl">{aboutIntro}</p>
       </div>
 
-      <div className="space-y-8 px-6 py-7 sm:px-8">
+      <div className="space-y-10 px-6 py-8 sm:px-8">
         {aboutCurrentRole ? <ContentSection title="What I do now" content={aboutCurrentRole} /> : null}
 
         {aboutHighlights.length ? (
           <div>
             <h2 className="mb-4 text-lg font-semibold text-white">What I bring</h2>
-            <ul className="grid gap-3 sm:grid-cols-2">
+            <ul className="space-y-3">
               {aboutHighlights.map((highlight, index) => (
-                <li key={index} className="flex gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm leading-6 text-slate-300">
+                <li
+                  key={index}
+                  className="flex w-full items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm leading-6 text-slate-300 transition hover:border-violet-400/30 hover:bg-white/[0.05]"
+                >
                   <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-violet-400" />
                   <span>{highlight}</span>
                 </li>
@@ -53,16 +58,22 @@ export default async function AboutCard() {
 
         {interests.length ? (
           <div>
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white"><Heart className="h-5 w-5 text-violet-400" /> Beyond work</h2>
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-white">
+              <Heart className="h-5 w-5 text-violet-400" /> Beyond work
+            </h2>
             <div className="flex flex-wrap gap-2">
-              {interests.map((interest, index) => <span key={index} className="rounded-full border border-violet-400/25 bg-violet-400/10 px-3 py-1.5 text-sm text-violet-100">{interest}</span>)}
+              {interests.map((interest, index) => (
+                <span key={index} className="rounded-full border border-violet-400/25 bg-violet-400/10 px-3 py-1.5 text-sm text-violet-100">
+                  {interest}
+                </span>
+              ))}
             </div>
           </div>
         ) : null}
 
-        <blockquote className="rounded-xl border border-violet-400/20 bg-violet-400/10 p-5">
+        <blockquote className="relative overflow-hidden rounded-xl border border-violet-400/20 bg-gradient-to-r from-violet-400/10 to-transparent p-6">
           <Quote className="mb-2 h-5 w-5 text-violet-300" />
-          <p className="text-lg italic leading-7 text-violet-100">“{quote}”</p>
+          <p className="text-lg italic leading-7 text-violet-100">"{quote}"</p>
           <footer className="mt-3 text-sm text-violet-300">— {quoteAuthor}</footer>
         </blockquote>
       </div>
@@ -71,9 +82,18 @@ export default async function AboutCard() {
 }
 
 function ContentSection({ title, content, accent = false }: { title: string; content: string; accent?: boolean }) {
-  return <div className={accent ? "border-l-2 border-violet-400/70 pl-5" : ""}><h2 className="mb-3 text-lg font-semibold text-white">{title}</h2><p className="whitespace-pre-line leading-7 text-slate-300">{content}</p></div>
+  return (
+    <div className={accent ? "border-l-2 border-violet-400/70 pl-5" : ""}>
+      <h2 className="mb-3 text-lg font-semibold text-white">{title}</h2>
+      <p className="whitespace-pre-line leading-7 text-slate-300">{content}</p>
+    </div>
+  )
 }
 
 function ProfileLink({ href, label }: { href: string; label: string }) {
-  return <a href={href} className="font-medium text-violet-300 transition hover:text-violet-200" target="_blank" rel="noopener noreferrer">{label} <ExternalLink className="inline h-4 w-4" /></a>
+  return (
+    <a href={href} className="font-medium text-violet-300 transition hover:text-violet-200" target="_blank" rel="noopener noreferrer">
+      {label} <ExternalLink className="inline h-4 w-4" />
+    </a>
+  )
 }

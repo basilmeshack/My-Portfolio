@@ -864,6 +864,13 @@ export async function updateEditableCmsData(input: EditableCmsData & { newPasswo
         : []
       const primaryProjectId = normalizedProjectIds[0] ?? experience.projectId ?? null
 
+      const periodLabel = formatPeriodLabel(
+        experience.startMonth,
+        experience.startYear,
+        experience.endMonth,
+        experience.endYear,
+      )
+
       const values = [
         roleTitle,
         experience.organization.trim(),
@@ -871,6 +878,7 @@ export async function updateEditableCmsData(input: EditableCmsData & { newPasswo
         experience.startYear || null,
         experience.endMonth || null,
         experience.endYear || null,
+        periodLabel,
         primaryProjectId,
         normalizeRichText(experience.responsibilitiesHtml),
         normalizeRichText(experience.achievementsHtml),
@@ -890,12 +898,13 @@ export async function updateEditableCmsData(input: EditableCmsData & { newPasswo
               start_year = $5,
               end_month = $6,
               end_year = $7,
-              project_id = $8,
-              responsibilities_html = $9,
-              achievements_html = $10,
-              display_order = $11,
+              period_label = $8,
+              project_id = $9,
+              responsibilities_html = $10,
+              achievements_html = $11,
+              display_order = $12,
               modified_at = NOW()
-            WHERE id = $1 AND profile_id = $12
+            WHERE id = $1 AND profile_id = $13
           `,
           [experience.id, ...values, profile.id],
         )
@@ -911,6 +920,7 @@ export async function updateEditableCmsData(input: EditableCmsData & { newPasswo
               start_year,
               end_month,
               end_year,
+              period_label,
               project_id,
               responsibilities_html,
               achievements_html,

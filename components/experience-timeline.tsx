@@ -30,11 +30,16 @@ export default async function ExperienceTimeline() {
                 <h4 className="font-medium mb-2 text-white">Responsibilities:</h4>
                 <div className="prose prose-invert max-w-none prose-p:my-2 prose-li:my-1" dangerouslySetInnerHTML={{ __html: exp.responsibilitiesHtml || "<p>No responsibilities added yet.</p>" }} />
               </div>
-
-              <div>
-                <h4 className="font-medium mb-2 text-white">Key Achievements:</h4>
-                <div className="prose prose-invert max-w-none prose-p:my-2 prose-li:my-1" dangerouslySetInnerHTML={{ __html: exp.achievementsHtml || "<p>No achievements added yet.</p>" }} />
-              </div>
+              
+              {exp.achievementsHtml?.replace(/<[^>]*>|&nbsp;/g, "").trim() && (
+                <div>
+                  <h4 className="font-medium mb-2 text-white">Key Achievements:</h4>
+                  <div
+                  className="prose prose-invert max-w-none prose-p:my-2 prose-li:my-1"
+                  dangerouslySetInnerHTML={{ __html: exp.achievementsHtml }}
+                  />
+                  </div>
+                )}
             </div>
           </div>
         ))}

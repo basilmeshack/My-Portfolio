@@ -116,18 +116,26 @@ export default function Hero() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.9, duration: 0.5 }}
             >
-              <Link
-                href="/about"
-                className="px-6 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors flex items-center"
+              <a
+                href="#about"
+                onClick={(e) => {
+                  e.preventDefault()
+                  document.getElementById("about")?.scrollIntoView({ behavior: "smooth" })
+                }}
+                className="px-6 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors flex items-center cursor-pointer"
               >
                 Learn More <ArrowRight className="ml-2" size={18} />
-              </Link>
-              <Link
-                href="/contact"
-                className="px-6 py-3 border border-purple-600 text-purple-400 rounded-md hover:bg-purple-900/20 transition-colors"
+              </a>
+              <a
+                href="#contact"
+                onClick={(e) => {
+                  e.preventDefault()
+                  document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })
+                }}
+                className="px-6 py-3 border border-purple-600 text-purple-400 rounded-md hover:bg-purple-900/20 transition-colors cursor-pointer"
               >
                 Contact Me
-              </Link>
+              </a>
             </motion.div>
           </div>
 

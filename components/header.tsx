@@ -6,19 +6,21 @@ import { usePathname, useRouter } from "next/navigation"
 import { Menu, X } from "lucide-react"
 
 const navItems = [
-  { name: "Home", href: "/" },
-  { name: "About", href: "/about" },
-  { name: "Experience", href: "/experience" },
-  { name: "Projects", href: "/projects" },
-  { name: "Contact", href: "/contact" },
+  { name: "Home", href: "#home" },
+  { name: "About", href: "#about" },
+  { name: "Experience", href: "#experience" },
+  { name: "Projects", href: "#projects" },
+  { name: "Contact", href: "#contact" },
+  { name: "Resume", href: "#resume" },
 ]
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
+  const [activeSection, setActiveSection] = useState("home")
   const pathname = usePathname()
   const router = useRouter()
 
-  const prefetchTargets = useMemo(() => [...navItems.map((item) => item.href), "/resume"], [])
+  const prefetchTargets = useMemo(() => ["/resume"], [])
 
   useEffect(() => {
     // Warm key routes so first navigation feels instant on slower devices/connections.
@@ -28,6 +30,61 @@ export default function Header() {
   const warmRoute = (href: string) => {
     router.prefetch(href)
   }
+
+  // Smooth scroll to section
+  const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    e.preventDefault()
+    const targetId = href.replace("#", "")
+    const element = document.getElementById(targetId)
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" })
+      setIsOpen(false)
+    }
+  }
+
+  // Update active section on scroll
+  useEffect(() => {
+    // Only enable scroll listener on home page
+    if (pathname !== "/") {
+      setActiveSection("resume")
+      return
+    }
+
+    const handleScroll = () => {
+      const sections = navItems.map(item => item.href.replace("#", ""))
+      const scrollPosition = window.scrollY + 150
+
+      let currentSection = "home"
+      let maxVisibility = 0
+
+      for (const section of sections) {
+        const element = document.getElementById(section)
+        if (element) {
+          const { offsetTop, offsetHeight } = element
+          const sectionBottom = offsetTop + offsetHeight
+          
+          // Check if section is in viewport
+          if (scrollPosition >= offsetTop && scrollPosition < sectionBottom) {
+            currentSection = section
+            break
+          }
+          
+          // Also check if we're past this section (for the last section)
+          if (scrollPosition >= sectionBottom && section === sections[sections.length - 1]) {
+            currentSection = section
+          }
+        }
+      }
+
+      setActiveSection(currentSection)
+    }
+
+    // Initial check
+    handleScroll()
+    
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [pathname])
 
   return (
     <header className="bg-gray-900/80 backdrop-blur-md sticky top-0 z-50">
@@ -40,30 +97,17 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
-              <Link
+              <a
                 key={item.name}
                 href={item.href}
-                prefetch
-                className={`text-base font-medium transition-colors hover:text-purple-400 ${
-                  pathname === item.href ? "text-purple-400" : "text-gray-300"
+                onClick={(e) => scrollToSection(e, item.href)}
+                className={`text-base font-medium transition-colors hover:text-purple-400 cursor-pointer ${
+                  activeSection === item.href.replace("#", "") ? "text-purple-400" : "text-gray-300"
                 }`}
-                onMouseEnter={() => warmRoute(item.href)}
-                onFocus={() => warmRoute(item.href)}
               >
                 {item.name}
-              </Link>
+              </a>
             ))}
-            <Link
-              href="/resume"
-              prefetch
-              className={`text-base font-medium transition-colors hover:text-purple-400 ${
-                pathname === "/resume" ? "text-purple-400" : "text-gray-300"
-              }`}
-              onMouseEnter={() => warmRoute("/resume")}
-              onFocus={() => warmRoute("/resume")}
-            >
-              Resume
-            </Link>
           </nav>
 
           {/* Mobile Menu Button */}
@@ -78,32 +122,17 @@ export default function Header() {
             <ul className="flex flex-col space-y-4">
               {navItems.map((item) => (
                 <li key={item.name}>
-                  <Link
+                  <a
                     href={item.href}
-                    prefetch
-                    className={`block text-base font-medium transition-colors hover:text-purple-400 ${
-                      pathname === item.href ? "text-purple-400" : "text-gray-300"
+                    onClick={(e) => scrollToSection(e, item.href)}
+                    className={`block text-base font-medium transition-colors hover:text-purple-400 cursor-pointer ${
+                      activeSection === item.href.replace("#", "") ? "text-purple-400" : "text-gray-300"
                     }`}
-                    onClick={() => setIsOpen(false)}
-                    onTouchStart={() => warmRoute(item.href)}
                   >
                     {item.name}
-                  </Link>
+                  </a>
                 </li>
               ))}
-              <li>
-                <Link
-                  href="/resume"
-                  prefetch
-                  className={`block text-base font-medium transition-colors hover:text-purple-400 ${
-                    pathname === "/resume" ? "text-purple-400" : "text-gray-300"
-                  }`}
-                  onClick={() => setIsOpen(false)}
-                  onTouchStart={() => warmRoute("/resume")}
-                >
-                  Resume
-                </Link>
-              </li>
             </ul>
           </nav>
         )}

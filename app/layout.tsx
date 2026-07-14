@@ -28,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className={`${inter.className} text-gray-100`}>
+      <body className={`${inter.className} text-gray-100`} suppressHydrationWarning>
         <QueryProvider>
           <ContentRefreshListener />
           <NeuralBackground />

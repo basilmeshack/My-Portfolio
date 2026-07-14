@@ -55,18 +55,22 @@ export default async function Home() {
       {/* Experience Section */}
       <section id="experience" className="min-h-screen scroll-mt-16 scroll-snap-start py-16">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h1 className="text-4xl font-bold mb-8 text-center">
+          <h1 className="text-4xl font-bold mb-12 text-center">
             My <span className="text-purple-400">Experience</span>
           </h1>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-            <div className="lg:col-span-2">
-              <ExperienceTimeline />
-            </div>
-            <div className="space-y-8">
-              <Skills />
-            </div>
+
+          {/* Experience Timeline */}
+          <div className="mb-16">
+            <ExperienceTimeline />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
+
+          {/* Technical Skills */}
+          <div className="mb-16">
+            <Skills />
+          </div>
+
+          {/* Professional Credentials & Education */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <ProfessionalCredentials />
             <EducationShowcase />
           </div>

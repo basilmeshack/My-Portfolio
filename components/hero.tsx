@@ -51,30 +51,28 @@ export default function Hero() {
       setText("")
     }
   }, [profile.tags])
-
-  // Typing animation effect
+  
   useEffect(() => {
-    const interval = setInterval(() => {
-      setIndex((prevIndex) => (prevIndex + 1) % phrases.length)
-    }, 3000)
-
-    return () => clearInterval(interval)
-  }, [phrases])
-
-  useEffect(() => {
-    let i = 0
+    if (phrases.length === 0) return
     const currentPhrase = phrases[index] || "Software Engineer"
-    const typingInterval = setInterval(() => {
+    let i = 0
+    let timeoutId: ReturnType<typeof setTimeout>
+    const typeChar = () => {
       if (i <= currentPhrase.length) {
         setText(currentPhrase.substring(0, i))
         i++
+        timeoutId = setTimeout(typeChar, 100)
       } else {
-        clearInterval(typingInterval)
+        timeoutId = setTimeout(() => {
+          setIndex((prev) => (prev + 1) % phrases.length)
+        }, 1500)
       }
-    }, 100)
+    }
 
-    return () => clearInterval(typingInterval)
-  }, [index, phrases])
+  typeChar()
+
+  return () => clearTimeout(timeoutId)
+}, [index, phrases])
 
   return (
     <section className="min-h-screen flex items-center justify-center py-20">

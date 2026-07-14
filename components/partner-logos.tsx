@@ -193,17 +193,7 @@ export default function PartnerLogos({
                     onMouseEnter={() => setHoveredLogo(item.name)}
                     onMouseLeave={() => setHoveredLogo(null)}
                   >
-                    <motion.div
-                      animate={{ y: [0, -10, 0] }}
-                      transition={{
-                        duration: 3,
-                        ease: "easeInOut",
-                        repeat: Number.POSITIVE_INFINITY,
-                        repeatType: "reverse",
-                        delay: index * 0.1,
-                      }}
-                      className="w-28 h-20 relative"
-                    >
+                    <div className="w-28 h-20 relative">
                       <a
                         href={item.demoLink || item.url}
                         target="_blank"
@@ -221,7 +211,7 @@ export default function PartnerLogos({
                           <div className="text-gray-500 text-xs text-center">{item.name}</div>
                         )}
                       </a>
-                    </motion.div>
+                    </div>
                     {hoveredLogo === item.name && (
                       <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs py-1 px-2 rounded whitespace-nowrap flex items-center z-10">
                         <span>{item.name}</span>

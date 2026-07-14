@@ -112,11 +112,17 @@ export default function AIAssistant() {
         // Add assistant response to chat
         setMessages((prev) => [...prev, { role: "assistant", content: data.message }])
       } catch (apiError) {
-        console.error("API Error:", apiError)
-
-        // Fallback to local response for common questions
-        const fallbackResponse = getFallbackResponse(input)
-        setMessages((prev) => [...prev, { role: "assistant", content: fallbackResponse }])
+        // Don't log AbortError as it's expected on timeout
+        if (apiError instanceof Error && apiError.name === 'AbortError') {
+          // Fallback to local response for common questions on timeout
+          const fallbackResponse = getFallbackResponse(input)
+          setMessages((prev) => [...prev, { role: "assistant", content: fallbackResponse }])
+        } else {
+          console.error("API Error:", apiError)
+          // Fallback to local response for common questions
+          const fallbackResponse = getFallbackResponse(input)
+          setMessages((prev) => [...prev, { role: "assistant", content: fallbackResponse }])
+        }
       }
     } catch (error) {
       console.error("Error in message handling:", error)

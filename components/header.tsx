@@ -44,40 +44,37 @@ export default function Header() {
       return
     }
 
-    const handleScroll = () => {
-      const sections = navItems.map(item => item.href.replace("#", ""))
-      const scrollPosition = window.scrollY + 150
-
-      let currentSection = "home"
-      let maxVisibility = 0
-
-      for (const section of sections) {
-        const element = document.getElementById(section)
-        if (element) {
-          const { offsetTop, offsetHeight } = element
-          const sectionBottom = offsetTop + offsetHeight
-          
-          // Check if section is in viewport
-          if (scrollPosition >= offsetTop && scrollPosition < sectionBottom) {
-            currentSection = section
-            break
-          }
-          
-          // Also check if we're past this section (for the last section)
-          if (scrollPosition >= sectionBottom && section === sections[sections.length - 1]) {
-            currentSection = section
-          }
-        }
-      }
-
-      setActiveSection(currentSection)
+    const sections = navItems.map(item => item.href.replace("/#", ""))
+    
+    const observerOptions = {
+      root: null,
+      rootMargin: "-20% 0px -60% 0px",
+      threshold: 0
     }
 
-    // Initial check
-    handleScroll()
-    
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id)
+        }
+      })
+    }, observerOptions)
+
+    sections.forEach(section => {
+      const element = document.getElementById(section)
+      if (element) {
+        observer.observe(element)
+      }
+    })
+
+    return () => {
+      sections.forEach(section => {
+        const element = document.getElementById(section)
+        if (element) {
+          observer.unobserve(element)
+        }
+      })
+    }
   }, [pathname])
 
   return (

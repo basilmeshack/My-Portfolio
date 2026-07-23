@@ -96,7 +96,7 @@ export default function Header() {
                 href={item.href}
                 onClick={(e) => scrollToSection(e, item.href)}
                 className={`text-base font-medium transition-colors hover:text-purple-400 cursor-pointer ${
-                  activeSection === item.href.replace("#", "") ? "text-purple-400" : "text-gray-300"
+                  activeSection === item.href.replace("/#", "") ? "text-purple-400" : "text-gray-300"
                 }`}
               >
                 {item.name}
@@ -120,7 +120,7 @@ export default function Header() {
                     href={item.href}
                     onClick={(e) => scrollToSection(e, item.href)}
                     className={`block text-base font-medium transition-colors hover:text-purple-400 cursor-pointer ${
-                      activeSection === item.href.replace("#", "") ? "text-purple-400" : "text-gray-300"
+                      activeSection === item.href.replace("/#", "") ? "text-purple-400" : "text-gray-300"
                     }`}
                   >
                     {item.name}
